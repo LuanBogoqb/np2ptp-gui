@@ -1,6 +1,7 @@
 namespace Np2ptpGui;
 
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
@@ -35,9 +36,13 @@ public sealed class TrayIconManager : IDisposable
             }
         });
 
+        var appIcon = Assembly.GetEntryAssembly()?.Location is { Length: > 0 } exePath
+            ? System.Drawing.Icon.ExtractAssociatedIcon(exePath)
+            : null;
+
         _notifyIcon = new NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = appIcon ?? System.Drawing.SystemIcons.Application,
             Text = "np2ptp",
             Visible = true,
             ContextMenuStrip = menu,

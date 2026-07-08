@@ -9,6 +9,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Np2ptpGui</AssemblyName>
     <RootNamespace>Np2ptpGui</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
 
 </Project>
