@@ -2,6 +2,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Np2ptpGui.Controls">
+    <UserControl.Resources>
+        <ResourceDictionary Source="/Np2ptpGui;component/Controls/HintTextBoxStyle.xaml" />
+    </UserControl.Resources>
     <StackPanel Margin="10">
         <Label Content="np2ptp.exe path" />
         <DockPanel>
