@@ -23,20 +23,23 @@ public class ConfigStoreTests
 
         Assert.Equal("", config.BinaryPath);
         Assert.Equal("/ip4/0.0.0.0/udp/0/quic-v1", config.DefaultListenAddress);
+        Assert.False(config.AlwaysUseDownloadDefaults);
+        Assert.True(config.KeepStoreByDefault);
         Directory.Delete(dir, recursive: true);
     }
 
     [Fact]
-    public void Load_WhenFileIsCorruptedJson_ReturnsDefaultsInsteadOfThrowing()
+    public void Load_WhenFileIsCorruptedText_ReturnsDefaultsInsteadOfThrowing()
     {
         var dir = NewTempDir();
         var store = new ConfigStore(dir);
-        var filePath = Path.Combine(dir, "config.json");
-        File.WriteAllText(filePath, "{ not valid json");
+        var filePath = Path.Combine(dir, "config.ini");
+        File.WriteAllText(filePath, "this is not a valid ini line at all === !!\nAlwaysUseDownloadDefaults=notabool\n");
 
         var config = store.Load();
 
         Assert.Equal("", config.BinaryPath);
+        Assert.False(config.AlwaysUseDownloadDefaults);
         Directory.Delete(dir, recursive: true);
     }
 
@@ -48,8 +51,8 @@ public class ConfigStoreTests
 
         store.Save(new AppConfig { BinaryPath = @"C:\bins\np2ptp.exe" });
 
-        Assert.True(File.Exists(Path.Combine(dir, "config.json")));
-        Assert.False(File.Exists(Path.Combine(dir, "config.json.tmp")));
+        Assert.True(File.Exists(Path.Combine(dir, "config.ini")));
+        Assert.False(File.Exists(Path.Combine(dir, "config.ini.tmp")));
         Directory.Delete(dir, recursive: true);
     }
 
@@ -65,6 +68,8 @@ public class ConfigStoreTests
             StoreFolder = @"C:\Store",
             DefaultListenAddress = "/ip4/0.0.0.0/udp/4001/quic-v1",
             TrackerUrl = "https://np2ptp.vercel.app",
+            AlwaysUseDownloadDefaults = true,
+            KeepStoreByDefault = false,
         };
 
         store.Save(original);
@@ -75,6 +80,8 @@ public class ConfigStoreTests
         Assert.Equal(original.StoreFolder, loaded.StoreFolder);
         Assert.Equal(original.DefaultListenAddress, loaded.DefaultListenAddress);
         Assert.Equal(original.TrackerUrl, loaded.TrackerUrl);
+        Assert.Equal(original.AlwaysUseDownloadDefaults, loaded.AlwaysUseDownloadDefaults);
+        Assert.Equal(original.KeepStoreByDefault, loaded.KeepStoreByDefault);
         Directory.Delete(dir, recursive: true);
     }
 
@@ -85,7 +92,7 @@ public class ConfigStoreTests
         // Save() on the same instance at nearly the same time used to be able
         // to collide on "<file>.tmp" and blow up File.Move with an
         // UnauthorizedAccessException. The instance-level lock in Save() must
-        // serialize these calls instead.
+        // serialize these calls instead. Format-agnostic; stays as-is for INI.
         var dir = NewTempDir();
         var store = new ConfigStore(dir);
 
@@ -96,8 +103,8 @@ public class ConfigStoreTests
 
         await Task.WhenAll(tasks);
 
-        Assert.True(File.Exists(Path.Combine(dir, "config.json")));
-        Assert.False(File.Exists(Path.Combine(dir, "config.json.tmp")));
+        Assert.True(File.Exists(Path.Combine(dir, "config.ini")));
+        Assert.False(File.Exists(Path.Combine(dir, "config.ini.tmp")));
         Directory.Delete(dir, recursive: true);
     }
 }
