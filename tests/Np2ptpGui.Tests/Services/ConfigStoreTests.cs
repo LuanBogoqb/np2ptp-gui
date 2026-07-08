@@ -2,6 +2,8 @@ namespace Np2ptpGui.Tests.Services;
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
 using Xunit;
@@ -73,6 +75,29 @@ public class ConfigStoreTests
         Assert.Equal(original.StoreFolder, loaded.StoreFolder);
         Assert.Equal(original.DefaultListenAddress, loaded.DefaultListenAddress);
         Assert.Equal(original.TrackerUrl, loaded.TrackerUrl);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public async Task Save_CalledConcurrentlyFromManyThreads_DoesNotThrow()
+    {
+        // Regression test for the fixed-temp-file race: two threads calling
+        // Save() on the same instance at nearly the same time used to be able
+        // to collide on "<file>.tmp" and blow up File.Move with an
+        // UnauthorizedAccessException. The instance-level lock in Save() must
+        // serialize these calls instead.
+        var dir = NewTempDir();
+        var store = new ConfigStore(dir);
+
+        var tasks = Enumerable.Range(0, 50).Select(i => Task.Run(() =>
+        {
+            store.Save(new AppConfig { BinaryPath = $@"C:\bins\np2ptp{i}.exe" });
+        }));
+
+        await Task.WhenAll(tasks);
+
+        Assert.True(File.Exists(Path.Combine(dir, "config.json")));
+        Assert.False(File.Exists(Path.Combine(dir, "config.json.tmp")));
         Directory.Delete(dir, recursive: true);
     }
 }

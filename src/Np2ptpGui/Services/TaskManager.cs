@@ -88,36 +88,91 @@ public sealed class TaskManager
         // _uiDispatch before mutating it.
         runner.EventReceived += evt => _uiDispatch(() =>
         {
-            vm.Apply(evt);
-            if (evt.Kind == NdjsonEventKind.Result)
+            // Everything here runs on whatever thread raised the Process event
+            // (see comment above), and EventReceived/Exited for the *same*
+            // operation can each land on a different background thread within
+            // microseconds of one another (there is no serialization between
+            // Process callbacks). Both read-then-write `entry`/`vm` without any
+            // synchronization otherwise, which is a data race in its own right
+            // (e.g. the Exited handler's "if Running" guard racing against this
+            // handler's write of entry.Status) - independent of whatever
+            // Save() does. `lock (entry)` makes each callback's read-check-
+            // mutate-persist sequence atomic per-operation (other operations'
+            // entries are unaffected, so this doesn't serialize unrelated
+            // work). The try/catch on top of that guards against an exception
+            // escaping this lambda, propagating out of _uiDispatch/
+            // Dispatcher.Invoke onto that background thread and, unhandled,
+            // crashing the whole process. Catch and swallow; best-effort avoid
+            // leaving the entry stuck as "Running" forever if the failure
+            // happened mid-update.
+            lock (entry)
             {
-                entry.Status = OperationStatus.Completed;
-                entry.OutputPath = evt.Path;
-                entry.FinishedAt = DateTime.UtcNow;
-                PersistHistory();
-            }
-            else if (evt.Kind == NdjsonEventKind.Error)
-            {
-                entry.Status = OperationStatus.Error;
-                entry.ErrorMessage = evt.Message;
-                entry.FinishedAt = DateTime.UtcNow;
-                PersistHistory();
+                try
+                {
+                    vm.Apply(evt);
+                    if (evt.Kind == NdjsonEventKind.Result)
+                    {
+                        entry.Status = OperationStatus.Completed;
+                        entry.OutputPath = evt.Path;
+                        entry.FinishedAt = DateTime.UtcNow;
+                        PersistHistory();
+                    }
+                    else if (evt.Kind == NdjsonEventKind.Error)
+                    {
+                        entry.Status = OperationStatus.Error;
+                        entry.ErrorMessage = evt.Message;
+                        entry.FinishedAt = DateTime.UtcNow;
+                        PersistHistory();
+                    }
+                }
+                catch (Exception)
+                {
+                    if (entry.Status == OperationStatus.Running)
+                    {
+                        entry.Status = OperationStatus.Error;
+                        entry.ErrorMessage ??= "internal error while recording operation result";
+                        entry.FinishedAt ??= DateTime.UtcNow;
+                        vm.Status = entry.Status.ToString();
+                        vm.ErrorMessage = entry.ErrorMessage;
+                        vm.IsError = true;
+                    }
+                }
             }
         });
         runner.Exited += code => _uiDispatch(() =>
         {
-            if (entry.Status == OperationStatus.Running)
+            // Same crash-proofing and per-operation locking rationale as the
+            // EventReceived handler above.
+            lock (entry)
             {
-                entry.Status = code == 0 ? OperationStatus.Completed : OperationStatus.Error;
-                entry.ErrorMessage ??= code == 0 ? null : $"process exited with code {code}";
-                entry.FinishedAt = DateTime.UtcNow;
-                vm.Status = entry.Status.ToString();
-                if (entry.ErrorMessage is not null)
+                try
                 {
-                    vm.ErrorMessage = entry.ErrorMessage;
-                    vm.IsError = true;
+                    if (entry.Status == OperationStatus.Running)
+                    {
+                        entry.Status = code == 0 ? OperationStatus.Completed : OperationStatus.Error;
+                        entry.ErrorMessage ??= code == 0 ? null : $"process exited with code {code}";
+                        entry.FinishedAt = DateTime.UtcNow;
+                        vm.Status = entry.Status.ToString();
+                        if (entry.ErrorMessage is not null)
+                        {
+                            vm.ErrorMessage = entry.ErrorMessage;
+                            vm.IsError = true;
+                        }
+                        PersistHistory();
+                    }
                 }
-                PersistHistory();
+                catch (Exception)
+                {
+                    if (entry.Status == OperationStatus.Running)
+                    {
+                        entry.Status = OperationStatus.Error;
+                        entry.ErrorMessage ??= "internal error while recording operation result";
+                        entry.FinishedAt ??= DateTime.UtcNow;
+                        vm.Status = entry.Status.ToString();
+                        vm.ErrorMessage = entry.ErrorMessage;
+                        vm.IsError = true;
+                    }
+                }
             }
         });
         runner.Start();
@@ -138,16 +193,26 @@ public sealed class TaskManager
         // race, mislabeling a deliberate stop as "Completed"/"Error". Writing it
         // first makes the Exited handler's guard see the operation as already
         // finished and no-op, which is what actually makes this deterministic.
-        if (_entries.TryGetValue(operationId, out var entry) && entry.Status == OperationStatus.Running)
+        if (_entries.TryGetValue(operationId, out var entry))
         {
-            entry.Status = OperationStatus.Stopped;
-            entry.FinishedAt = DateTime.UtcNow;
-            var vm = Operations.FirstOrDefault(o => o.Id == operationId);
-            if (vm is not null)
+            // Same per-operation lock as the EventReceived/Exited handlers in
+            // Start(): this guard-then-mutate-then-persist sequence must be
+            // atomic with respect to those handlers, or the "is it still
+            // Running" check below is racy against them too.
+            lock (entry)
             {
-                vm.Status = OperationStatus.Stopped.ToString();
+                if (entry.Status == OperationStatus.Running)
+                {
+                    entry.Status = OperationStatus.Stopped;
+                    entry.FinishedAt = DateTime.UtcNow;
+                    var vm = Operations.FirstOrDefault(o => o.Id == operationId);
+                    if (vm is not null)
+                    {
+                        vm.Status = OperationStatus.Stopped.ToString();
+                    }
+                    PersistHistory();
+                }
             }
-            PersistHistory();
         }
         await runner.StopGracefullyAsync(timeout);
     }

@@ -3,6 +3,7 @@ namespace Np2ptpGui.Tests.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
 using Xunit;
@@ -100,6 +101,32 @@ public class HistoryStoreTests
 
         Assert.Equal(OperationStatus.Interrupted, loaded.Single(e => e.Id == "1").Status);
         Assert.Equal(OperationStatus.Completed, loaded.Single(e => e.Id == "2").Status);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public async Task Save_CalledConcurrentlyFromManyThreads_DoesNotThrow()
+    {
+        // Regression test for the fixed-temp-file race: two threads calling
+        // Save() on the same instance at nearly the same time used to be able
+        // to collide on "<file>.tmp" and blow up File.Move with an
+        // UnauthorizedAccessException. The instance-level lock in Save() must
+        // serialize these calls instead.
+        var dir = NewTempDir();
+        var store = new HistoryStore(dir);
+
+        var tasks = Enumerable.Range(0, 50).Select(i => Task.Run(() =>
+        {
+            store.Save(new[]
+            {
+                new TaskHistoryEntry { Id = i.ToString(), Type = OperationType.Pack, InputOrLink = "a", Status = OperationStatus.Completed },
+            });
+        }));
+
+        await Task.WhenAll(tasks);
+
+        Assert.True(File.Exists(Path.Combine(dir, "history.json")));
+        Assert.False(File.Exists(Path.Combine(dir, "history.json.tmp")));
         Directory.Delete(dir, recursive: true);
     }
 }
