@@ -17,4 +17,8 @@
     <Resource Include="Fonts\tahoma.ttf" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Np2ptpGui.Tests" />
+  </ItemGroup>
+
 </Project>
