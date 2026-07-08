@@ -272,7 +272,7 @@ public class TaskManagerTests
         Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "serve-ok");
         try
         {
-            var vm = manager.StartServe(@"C:\some\file.nptp", @"C:\store", "/ip4/0.0.0.0/udp/0/quic-v1", "https://np2ptp.vercel.app");
+            var vm = manager.StartServe(@"C:\some\file.nptp", @"C:\store", "/ip4/0.0.0.0/udp/0/quic-v1", "https://tracker.example");
 
             await WaitUntilAsync(() => vm.DetailText.Contains("peers"), TimeSpan.FromSeconds(5));
 

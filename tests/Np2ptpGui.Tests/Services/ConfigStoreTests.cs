@@ -67,7 +67,7 @@ public class ConfigStoreTests
             DefaultDownloadFolder = @"C:\Downloads",
             StoreFolder = @"C:\Store",
             DefaultListenAddress = "/ip4/0.0.0.0/udp/4001/quic-v1",
-            TrackerUrl = "https://np2ptp.vercel.app",
+            TrackerUrl = "https://tracker.example",
             AlwaysUseDownloadDefaults = true,
             KeepStoreByDefault = false,
         };

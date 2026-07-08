@@ -31,7 +31,7 @@
 
         <Label Content="Tracker URL" />
         <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}"
-                 controls:HintBehavior.Hint="Ex: https://np2ptp.vercel.app"
+                 controls:HintBehavior.Hint="Ex: https://tracker.example"
                  Margin="0,0,0,10" />
 
         <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,10,0,4" />

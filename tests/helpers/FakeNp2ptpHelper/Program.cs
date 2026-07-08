@@ -25,7 +25,7 @@ switch (scenario)
     case "serve-ok":
         var stopRequested = new ManualResetEventSlim(false);
         Console.CancelKeyPress += (_, e) => { e.Cancel = true; stopRequested.Set(); };
-        Console.WriteLine("""{"event":"status","op":"serve","peers":0,"tracker":"https://np2ptp.vercel.app","bytes_served":0,"bytes_received":0}""");
+        Console.WriteLine("""{"event":"status","op":"serve","peers":0,"tracker":"https://tracker.example","bytes_served":0,"bytes_received":0}""");
         stopRequested.Wait(TimeSpan.FromSeconds(30));
         return 0;
 
