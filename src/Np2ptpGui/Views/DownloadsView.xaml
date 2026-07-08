@@ -1,0 +1,35 @@
+<UserControl x:Class="Np2ptpGui.Views.DownloadsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBox Width="500" Text="{Binding DownloadLinkInput, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Content="+ New download" Command="{Binding StartDownloadCommand}" Margin="10,0,0,0" />
+        </StackPanel>
+        <ListView ItemsSource="{Binding FetchOperations}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Link" DisplayMemberBinding="{Binding InputOrLink}" Width="300" />
+                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100" />
+                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding DetailText}" Width="250" />
+                    <GridViewColumn Header="Progress" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressFraction, Mode=OneWay}" Width="130" Height="16" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Retry"
+                                        Command="{Binding DataContext.RetryOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding Id}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
+</UserControl>
