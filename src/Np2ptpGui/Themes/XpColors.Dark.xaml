@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="XpWindowBackgroundBrush" Color="#2B2B24" />
+    <SolidColorBrush x:Key="XpControlBackgroundBrush" Color="#3C3C34" />
+    <SolidColorBrush x:Key="XpControlBorderBrush" Color="#3D95FF" />
+    <SolidColorBrush x:Key="XpAccentTopBrush" Color="#1B4C99" />
+    <SolidColorBrush x:Key="XpAccentBottomBrush" Color="#0B2E6E" />
+    <SolidColorBrush x:Key="XpAccentPressedBrush" Color="#061A44" />
+    <SolidColorBrush x:Key="XpTextBrush" Color="#F0F0F0" />
+    <SolidColorBrush x:Key="XpDisabledTextBrush" Color="#9A9A9A" />
+
+    <LinearGradientBrush x:Key="XpAccentGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1B4C99" Offset="0" />
+        <GradientStop Color="#0B2E6E" Offset="1" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>

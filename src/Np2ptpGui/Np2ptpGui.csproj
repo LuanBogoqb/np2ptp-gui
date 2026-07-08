@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
+    <Resource Include="Fonts\tahoma.ttf" />
   </ItemGroup>
 
 </Project>
