@@ -24,6 +24,19 @@ public sealed class TaskManager
         _exePath = exePath;
         _historyStore = historyStore;
         _uiDispatch = uiDispatch ?? (action => action());
+
+        foreach (var entry in _historyStore.Load())
+        {
+            var vm = new OperationViewModel(entry.Id, entry.Type, entry.InputOrLink)
+            {
+                Status = entry.Status.ToString(),
+                OutputPath = entry.OutputPath,
+                ErrorMessage = entry.ErrorMessage,
+                ProgressFraction = entry.Status == OperationStatus.Completed ? 1.0 : 0,
+            };
+            _entries[entry.Id] = entry;
+            Operations.Add(vm);
+        }
     }
 
     public OperationViewModel StartFetch(string link, string outputFolder, bool useFec)

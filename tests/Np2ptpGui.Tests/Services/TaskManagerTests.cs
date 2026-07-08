@@ -2,6 +2,7 @@ namespace Np2ptpGui.Tests.Services;
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
@@ -33,6 +34,78 @@ public class TaskManagerTests
             await Task.Delay(25);
         }
         Assert.True(condition(), "condition not met within timeout");
+    }
+
+    [Fact]
+    public async Task Constructor_WithExistingHistoryOnDisk_SeedsOperationsAndEntries()
+    {
+        var dir = NewTempDir();
+        try
+        {
+            var seedingStore = new HistoryStore(dir);
+            seedingStore.Save(new[]
+            {
+                new TaskHistoryEntry
+                {
+                    Id = "old-1",
+                    Type = OperationType.Pack,
+                    InputOrLink = @"C:\some\input",
+                    OutputPath = @"C:\store\old-1.nptp",
+                    Status = OperationStatus.Completed,
+                    StartedAt = DateTime.UtcNow.AddDays(-1),
+                    FinishedAt = DateTime.UtcNow.AddDays(-1),
+                },
+                new TaskHistoryEntry
+                {
+                    Id = "old-2",
+                    Type = OperationType.Fetch,
+                    InputOrLink = "np2ptp:deadbeef",
+                    Status = OperationStatus.Error,
+                    ErrorMessage = "boom",
+                    StartedAt = DateTime.UtcNow.AddDays(-1),
+                    FinishedAt = DateTime.UtcNow.AddDays(-1),
+                },
+            });
+
+            // A fresh HistoryStore instance over the same directory, mirroring how a new
+            // app session constructs its own HistoryStore against the persisted appDataDir.
+            var historyStore = new HistoryStore(dir);
+            var manager = new TaskManager(FakeHelperPath, historyStore);
+
+            Assert.Equal(2, manager.Operations.Count);
+
+            var completed = manager.Operations.Single(o => o.Id == "old-1");
+            Assert.Equal("Completed", completed.Status);
+            Assert.Equal(@"C:\store\old-1.nptp", completed.OutputPath);
+            Assert.Equal(1.0, completed.ProgressFraction);
+
+            var errored = manager.Operations.Single(o => o.Id == "old-2");
+            Assert.Equal("Error", errored.Status);
+            Assert.Equal("boom", errored.ErrorMessage);
+            Assert.Equal(0, errored.ProgressFraction);
+
+            // Starting a brand-new operation and persisting should NOT clobber the
+            // pre-existing history rows loaded at construction time.
+            Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "pack-ok");
+            var vm = manager.StartPack(@"C:\some\other-input", null, @"C:\store", noCopy: false);
+            var persistedImmediately = historyStore.Load();
+            Assert.Equal(3, persistedImmediately.Count);
+            Assert.Contains(persistedImmediately, e => e.Id == "old-1");
+            Assert.Contains(persistedImmediately, e => e.Id == "old-2");
+            Assert.Contains(persistedImmediately, e => e.Id == vm.Id);
+
+            // Wait for the FakeNp2ptpHelper child process to actually exit before this
+            // test's `finally` deletes the temp directory out from under it - otherwise
+            // a background PersistHistory() call can race the delete and throw an
+            // unhandled DirectoryNotFoundException on a ThreadPool thread, which aborts
+            // the whole test host process instead of just failing this one test.
+            await WaitUntilAsync(() => vm.Status == "Completed", TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", null);
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
