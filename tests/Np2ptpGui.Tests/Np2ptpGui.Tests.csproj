@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Np2ptpGui\Np2ptpGui.csproj" />
+    <ProjectReference Include="..\helpers\CtrlSignalTestHelper\CtrlSignalTestHelper.csproj" />
   </ItemGroup>
 
 </Project>
