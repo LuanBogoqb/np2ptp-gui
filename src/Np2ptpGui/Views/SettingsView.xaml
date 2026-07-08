@@ -11,14 +11,18 @@
         <TextBlock Text="{Binding UpdateStatus}" Margin="0,4,0,10" />
 
         <Label Content="Default download folder" />
-        <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
-                 controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads"
-                 Margin="0,0,0,10" />
+        <DockPanel Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" />
+            <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
+        </DockPanel>
 
         <Label Content="Store folder" />
-        <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
-                 controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store"
-                 Margin="0,0,0,10" />
+        <DockPanel Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" />
+            <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+        </DockPanel>
 
         <Label Content="Default listen address" />
         <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}"
@@ -29,6 +33,9 @@
         <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}"
                  controls:HintBehavior.Hint="Ex: https://np2ptp.vercel.app"
                  Margin="0,0,0,10" />
+
+        <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,10,0,4" />
+        <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" Margin="0,0,0,10" />
 
         <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Width="80" />
     </StackPanel>

@@ -4,8 +4,10 @@
              xmlns:controls="clr-namespace:Np2ptpGui.Controls">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBox Width="500" Text="{Binding PackInputPath, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox Width="380" Text="{Binding PackInputPath, UpdateSourceTrigger=PropertyChanged}"
                      controls:HintBehavior.Hint="Arquivo ou pasta a compartilhar" />
+            <Button Content="Arquivo..." Command="{Binding BrowsePackFileCommand}" Margin="10,0,0,0" />
+            <Button Content="Pasta..." Command="{Binding BrowsePackFolderCommand}" Margin="5,0,0,0" />
             <Button Content="+ Pack" Command="{Binding StartPackCommand}" Margin="10,0,0,0" />
         </StackPanel>
         <ListView ItemsSource="{Binding PackOperations}">

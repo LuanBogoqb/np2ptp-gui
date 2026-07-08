@@ -33,6 +33,8 @@ public sealed class MainViewModel : ViewModelBase
     public RelayCommand StartServeCommand { get; }
     public RelayCommand StopOperationCommand { get; }
     public RelayCommand RetryOperationCommand { get; }
+    public RelayCommand BrowsePackFileCommand { get; }
+    public RelayCommand BrowsePackFolderCommand { get; }
 
     public MainViewModel(TaskManager taskManager, AppConfig config)
     {
@@ -84,6 +86,18 @@ public sealed class MainViewModel : ViewModelBase
         RetryOperationCommand = new RelayCommand(param =>
         {
             if (param is string id) _taskManager.Retry(id);
+        });
+
+        BrowsePackFileCommand = new RelayCommand(_ =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            if (dialog.ShowDialog() == true) PackInputPath = dialog.FileName;
+        });
+
+        BrowsePackFolderCommand = new RelayCommand(_ =>
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog();
+            if (dialog.ShowDialog() == true) PackInputPath = dialog.FolderName;
         });
     }
 }

@@ -1,6 +1,7 @@
 namespace Np2ptpGui.ViewModels;
 
 using System;
+using System.IO;
 using System.Threading;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
@@ -26,11 +27,19 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _trackerUrl;
     public string TrackerUrl { get => _trackerUrl; set => SetField(ref _trackerUrl, value); }
 
+    private bool _alwaysUseDownloadDefaults;
+    public bool AlwaysUseDownloadDefaults { get => _alwaysUseDownloadDefaults; set => SetField(ref _alwaysUseDownloadDefaults, value); }
+
+    private bool _keepStoreByDefault;
+    public bool KeepStoreByDefault { get => _keepStoreByDefault; set => SetField(ref _keepStoreByDefault, value); }
+
     private string _updateStatus = "";
     public string UpdateStatus { get => _updateStatus; set => SetField(ref _updateStatus, value); }
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand CheckForUpdateCommand { get; }
+    public RelayCommand BrowseDownloadFolderCommand { get; }
+    public RelayCommand BrowseStoreFolderCommand { get; }
 
     public SettingsViewModel(ConfigStore configStore, BinaryManager binaryManager, AppConfig config)
     {
@@ -43,6 +52,8 @@ public sealed class SettingsViewModel : ViewModelBase
         _storeFolder = config.StoreFolder;
         _defaultListenAddress = config.DefaultListenAddress;
         _trackerUrl = config.TrackerUrl;
+        _alwaysUseDownloadDefaults = config.AlwaysUseDownloadDefaults;
+        _keepStoreByDefault = config.KeepStoreByDefault;
 
         SaveCommand = new RelayCommand(_ =>
         {
@@ -50,6 +61,8 @@ public sealed class SettingsViewModel : ViewModelBase
             _config.StoreFolder = StoreFolder;
             _config.DefaultListenAddress = DefaultListenAddress;
             _config.TrackerUrl = TrackerUrl;
+            _config.AlwaysUseDownloadDefaults = AlwaysUseDownloadDefaults;
+            _config.KeepStoreByDefault = KeepStoreByDefault;
             _configStore.Save(_config);
         });
 
@@ -65,6 +78,24 @@ public sealed class SettingsViewModel : ViewModelBase
             {
                 UpdateStatus = $"check failed: {ex.Message}";
             }
+        });
+
+        BrowseDownloadFolderCommand = new RelayCommand(_ =>
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                InitialDirectory = Directory.Exists(DefaultDownloadFolder) ? DefaultDownloadFolder : "",
+            };
+            if (dialog.ShowDialog() == true) DefaultDownloadFolder = dialog.FolderName;
+        });
+
+        BrowseStoreFolderCommand = new RelayCommand(_ =>
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                InitialDirectory = Directory.Exists(StoreFolder) ? StoreFolder : "",
+            };
+            if (dialog.ShowDialog() == true) StoreFolder = dialog.FolderName;
         });
     }
 }
