@@ -26,6 +26,9 @@ public static class NdjsonParser
             if (!root.TryGetProperty("event", out var eventProp)) return false;
             if (!root.TryGetProperty("op", out var opProp)) return false;
 
+            if (eventProp.ValueKind is not JsonValueKind.String) return false;
+            if (opProp.ValueKind is not JsonValueKind.String) return false;
+
             var kind = eventProp.GetString() switch
             {
                 "progress" => NdjsonEventKind.Progress,

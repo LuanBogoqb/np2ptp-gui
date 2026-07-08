@@ -104,6 +104,8 @@ public class NdjsonParserTests
     [InlineData("not json")]
     [InlineData("""{"op":"pack"}""")]
     [InlineData("""{"event":"unknown","op":"pack"}""")]
+    [InlineData("""{"event":123,"op":"pack"}""")]
+    [InlineData("""{"event":"progress","op":7}""")]
     public void TryParse_InvalidOrUnknownInput_ReturnsFalse(string line)
     {
         Assert.False(NdjsonParser.TryParse(line, out var evt));
