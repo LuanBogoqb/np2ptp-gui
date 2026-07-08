@@ -78,11 +78,18 @@ finished). Starting an operation:
    property — bound UI elements (progress bar, status text, peers count for
    `serve`) update automatically.
 4. **Stopping `serve`** (the only long-running, non-terminating operation):
-   the process is created with `CREATE_NEW_PROCESS_GROUP`, and stopping calls
-   `GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, ...)` against it — the same
-   signal the Rust side's `tokio::signal::ctrl_c()` already handles for a
-   clean shutdown (stop announcing, close connections). If the process
-   hasn't exited within ~3s, fall back to `Process.Kill()`.
+   `np2ptp`'s Rust side calls `tokio::signal::ctrl_c()`, which on Windows
+   only reacts to `CTRL_C_EVENT` (not `CTRL_BREAK_EVENT`). Since
+   `GenerateConsoleCtrlEvent(CTRL_C_EVENT, ...)` can only be targeted at
+   "every process sharing the caller's current console" (unlike
+   `CTRL_BREAK_EVENT`, it can't be aimed at one specific process group), the
+   GUI briefly attaches itself to the child's own (hidden) console via
+   `AttachConsole(childPid)`, disables its own ctrl-handler for that instant
+   via `SetConsoleCtrlHandler(NULL, TRUE)`, calls
+   `GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0)`, then detaches
+   (`FreeConsole()`). Because the child is the only process on that console,
+   this reaches only it. If the process hasn't exited within ~3s, fall back
+   to `Process.Kill()`.
 
 Because each operation is a separate OS process, running several
 concurrently (a fetch, a serve, and a pack all at once) requires no extra
