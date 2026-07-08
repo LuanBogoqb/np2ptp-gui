@@ -110,6 +110,7 @@ public class TaskManagerTests
             var persisted = historyStore.Load();
             Assert.Single(persisted);
             Assert.Equal(OperationStatus.Stopped, persisted[0].Status);
+            Assert.Equal("Stopped", vm.Status);
         }
         finally
         {

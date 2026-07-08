@@ -129,6 +129,11 @@ public sealed class TaskManager
         {
             entry.Status = OperationStatus.Stopped;
             entry.FinishedAt = DateTime.UtcNow;
+            var vm = Operations.FirstOrDefault(o => o.Id == operationId);
+            if (vm is not null)
+            {
+                vm.Status = OperationStatus.Stopped.ToString();
+            }
             PersistHistory();
         }
         await runner.StopGracefullyAsync(timeout);
