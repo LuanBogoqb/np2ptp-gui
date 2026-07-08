@@ -500,6 +500,8 @@ git commit -m "feat: add placeholder hint text to all free-text inputs"
 
 No automated tests — dialog invocation needs a live WPF dispatcher/user interaction, same rationale as Task 2. Verified manually in Step 4.
 
+**Note (post-Task-2 correction):** Task 2 originally planned a `Style="{StaticResource HintTextBoxStyle}"` attribute alongside `controls:HintBehavior.Hint` on every hinted `TextBox`. That `Style`/`VisualBrush`/`Binding` approach turned out to crash the app on startup (`App.xaml` has no `StartupUri`, so `Application.Resources` never actually loads in this project) and, even after working around that, never rendered the hint text at all (`RelativeSource AncestorType` can't resolve from inside a `VisualBrush.Visual`, which is a disconnected visual tree). Task 2 ended up replacing the whole mechanism with a code-behind approach in `HintBehavior.cs` that manages `TextBox.Background` directly — no `Style` or resource lookup involved anywhere anymore. Every `TextBox` below carries `controls:HintBehavior.Hint="..."` only, with **no `Style=` attribute** — do not add one back.
+
 - [ ] **Step 1: Add Browse commands + the two checkboxes to `SettingsViewModel`**
 
 Replace the full contents of `src/Np2ptpGui/ViewModels/SettingsViewModel.cs`:
@@ -629,24 +631,24 @@ Replace the full contents of `src/Np2ptpGui/Views/SettingsView.xaml`:
         <DockPanel Margin="0,0,0,10">
             <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" />
             <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
         </DockPanel>
 
         <Label Content="Store folder" />
         <DockPanel Margin="0,0,0,10">
             <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" />
             <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
         </DockPanel>
 
         <Label Content="Default listen address" />
         <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}"
-                 Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: /ip4/0.0.0.0/udp/0/quic-v1"
+                 controls:HintBehavior.Hint="Ex: /ip4/0.0.0.0/udp/0/quic-v1"
                  Margin="0,0,0,10" />
 
         <Label Content="Tracker URL" />
         <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}"
-                 Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: https://np2ptp.vercel.app"
+                 controls:HintBehavior.Hint="Ex: https://np2ptp.vercel.app"
                  Margin="0,0,0,10" />
 
         <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,10,0,4" />
@@ -702,7 +704,7 @@ Edit `src/Np2ptpGui/Views/ShareView.xaml` — add the two buttons next to the in
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBox Width="380" Text="{Binding PackInputPath, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Arquivo ou pasta a compartilhar" />
+                     controls:HintBehavior.Hint="Arquivo ou pasta a compartilhar" />
             <Button Content="Arquivo..." Command="{Binding BrowsePackFileCommand}" Margin="10,0,0,0" />
             <Button Content="Pasta..." Command="{Binding BrowsePackFolderCommand}" Margin="5,0,0,0" />
             <Button Content="+ Pack" Command="{Binding StartPackCommand}" Margin="10,0,0,0" />
@@ -754,10 +756,12 @@ git commit -m "feat: add folder/file pickers and download-default checkboxes to 
 - Create: `src/Np2ptpGui/Views/FetchOptionsDialog.xaml.cs`
 
 **Interfaces:**
-- Consumes: `HintTextBoxStyle`/`HintBehavior.Hint` (Task 2).
+- Consumes: `Np2ptpGui.Controls.HintBehavior.Hint` (Task 2).
 - Produces: `Np2ptpGui.Views.FetchOptionsDialog(string defaultReconstructFolder, string defaultStoreFolder, bool defaultKeepStore)` — a `Window` with public read-only `ReconstructFolder` (string), `StoreFolder` (string), `KeepStore` (bool) populated after `ShowDialog()` returns `true`. Task 6 constructs this and reads those three properties.
 
 No automated tests — a WPF `Window` needs a live STA dispatcher to construct/show, which this test project has no infrastructure for (no `[StaFact]`/WPF test host anywhere in the existing suite). Verified manually in Task 6's end-to-end check, once it's actually reachable from the running app.
+
+**Note (post-Task-2 correction):** Task 2 replaced the original `Style="{StaticResource HintTextBoxStyle}"` mechanism with a pure code-behind approach in `HintBehavior.cs` (it manages `TextBox.Background` directly via a `TextChanged` handler — no `Style`, no `VisualBrush`-with-`Binding`, no resource dictionary anywhere). The XAML below only needs `controls:HintBehavior.Hint="..."` on each `TextBox` — no `Style=` attribute, and no resource merging of any kind. This is why the two `TextBox`es below carry only the `Hint` attribute.
 
 - [ ] **Step 1: Write the dialog XAML**
 
@@ -775,14 +779,14 @@ Create `src/Np2ptpGui/Views/FetchOptionsDialog.xaml`:
         <DockPanel Margin="0,0,0,10">
             <Button DockPanel.Dock="Right" Content="Procurar..." Click="BrowseReconstructFolder_Click" />
             <TextBox x:Name="ReconstructFolderBox"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
         </DockPanel>
 
         <Label Content="Pasta do store (chunks dessa transferência)" />
         <DockPanel Margin="0,0,0,10">
             <Button DockPanel.Dock="Right" Content="Procurar..." Click="BrowseStoreFolder_Click" />
             <TextBox x:Name="StoreFolderBox"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
         </DockPanel>
 
         <CheckBox x:Name="KeepStoreCheckBox" Content="Manter store depois de concluir" Margin="0,0,0,20" />
