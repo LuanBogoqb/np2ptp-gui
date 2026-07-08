@@ -46,11 +46,15 @@ public static class ConsoleCtrl
             SetConsoleCtrlHandler(IntPtr.Zero, true);
             var sent = GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
 
-            // GenerateConsoleCtrlEvent only queues delivery; the ignore flag
-            // above must still be in effect when the OS actually dispatches
-            // the event to this process, or the default action (terminate)
-            // applies to us too. Undoing it immediately races with that
-            // async dispatch and can kill the caller. Give it a moment.
+            // CRITICAL: GenerateConsoleCtrlEvent only queues delivery; the
+            // ignore flag above must still be in effect when the OS actually
+            // dispatches the event to this process, or the default action
+            // (terminate) applies to us too. This timing protection is NOT
+            // test-only — it is required in production. Any process calling
+            // AttachConsole (including the real WPF app) becomes a sibling on
+            // the child's console and is exposed to the broadcast CTRL_C
+            // regardless of GUI vs. console subsystem. Removing this sleep
+            // reintroduces a self-kill race. Give it a moment.
             Thread.Sleep(200);
 
             return sent;
