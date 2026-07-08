@@ -12,6 +12,12 @@ switch (scenario)
         Console.WriteLine("""{"event":"result","op":"pack","root":"np2ptp:deadbeef","chunks_total":70,"chunks_new":2,"bytes_total":5242880}""");
         return 0;
 
+    case "fetch-ok":
+        Console.WriteLine("""{"event":"progress","op":"fetch","chunks_done":5,"chunks_total":10}""");
+        Thread.Sleep(150);
+        Console.WriteLine("""{"event":"result","op":"fetch","path":"C:\\downloads\\file.bin","chunks_total":10,"chunks_new":10}""");
+        return 0;
+
     case "fetch-error":
         Console.WriteLine("""{"event":"error","op":"fetch","message":"download failed: request to peer failed"}""");
         return 1;

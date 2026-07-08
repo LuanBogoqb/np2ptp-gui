@@ -109,6 +109,104 @@ public class TaskManagerTests
     }
 
     [Fact]
+    public async Task StartFetch_StoresUnderStoreFolderSlashOperationId_AndDeletesItOnSuccessWhenNotKeeping()
+    {
+        var dir = NewTempDir();
+        var historyStore = new HistoryStore(dir);
+        var manager = new TaskManager(FakeHelperPath, historyStore);
+        var storeRoot = Path.Combine(dir, "store-root");
+
+        Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "fetch-ok");
+        try
+        {
+            var vm = manager.StartFetch("np2ptp:deadbeef", Path.Combine(dir, "out"), storeRoot, keepStore: false, useFec: false);
+            var storeSubfolder = Path.Combine(storeRoot, vm.Id);
+
+            // FakeNp2ptpHelper doesn't touch disk itself; simulate that the real
+            // np2ptp process would have created chunk files under the store
+            // subfolder np2ptp-gui computed for this operation.
+            Directory.CreateDirectory(storeSubfolder);
+            File.WriteAllText(Path.Combine(storeSubfolder, "chunk0"), "fake chunk data");
+
+            await WaitUntilAsync(() => vm.Status == "Completed", TimeSpan.FromSeconds(5));
+
+            Assert.False(Directory.Exists(storeSubfolder));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", null);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task StartFetch_OnSuccessWithKeepStoreTrue_LeavesTheStoreSubfolderInPlace()
+    {
+        var dir = NewTempDir();
+        var historyStore = new HistoryStore(dir);
+        var manager = new TaskManager(FakeHelperPath, historyStore);
+        var storeRoot = Path.Combine(dir, "store-root");
+
+        Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "fetch-ok");
+        try
+        {
+            var vm = manager.StartFetch("np2ptp:deadbeef", Path.Combine(dir, "out"), storeRoot, keepStore: true, useFec: false);
+            var storeSubfolder = Path.Combine(storeRoot, vm.Id);
+            Directory.CreateDirectory(storeSubfolder);
+            File.WriteAllText(Path.Combine(storeSubfolder, "chunk0"), "fake chunk data");
+
+            await WaitUntilAsync(() => vm.Status == "Completed", TimeSpan.FromSeconds(5));
+
+            Assert.True(Directory.Exists(storeSubfolder));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", null);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Retry_OfAFetch_DoesNotDeleteTheOriginalStoreSubfolderOnItsOwnSuccess()
+    {
+        var dir = NewTempDir();
+        var historyStore = new HistoryStore(dir);
+        var manager = new TaskManager(FakeHelperPath, historyStore);
+        var storeRoot = Path.Combine(dir, "store-root");
+
+        Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "fetch-ok");
+        try
+        {
+            var original = manager.StartFetch("np2ptp:deadbeef", Path.Combine(dir, "out"), storeRoot, keepStore: false, useFec: false);
+            var storeSubfolder = Path.Combine(storeRoot, original.Id);
+            Directory.CreateDirectory(storeSubfolder);
+            File.WriteAllText(Path.Combine(storeSubfolder, "chunk0"), "fake chunk data");
+            await WaitUntilAsync(() => original.Status == "Completed", TimeSpan.FromSeconds(5));
+            // keepStore: false means the original run's own subfolder is gone by now.
+            Assert.False(Directory.Exists(storeSubfolder));
+
+            // Retry re-runs with the SAME args (including the original --store path),
+            // which is a feature (content-addressed store resumes from what's there),
+            // but does not get its own cleanup-on-success hook - matches the
+            // already-accepted "retried rows don't get full first-class treatment"
+            // limitation documented in docs/LESSONS-LEARNED.md.
+            var retried = manager.Retry(original.Id);
+            Assert.NotNull(retried);
+            Directory.CreateDirectory(storeSubfolder);
+            File.WriteAllText(Path.Combine(storeSubfolder, "chunk0"), "fake chunk data again");
+
+            await WaitUntilAsync(() => retried!.Status == "Completed", TimeSpan.FromSeconds(5));
+
+            Assert.True(Directory.Exists(storeSubfolder));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", null);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task StartPack_OnResultEvent_MarksOperationCompletedAndPersistsHistory()
     {
         var dir = NewTempDir();
@@ -146,7 +244,7 @@ public class TaskManagerTests
         Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "fetch-error");
         try
         {
-            var vm = manager.StartFetch("np2ptp:deadbeef", @"C:\downloads", useFec: false);
+            var vm = manager.StartFetch("np2ptp:deadbeef", @"C:\downloads", @"C:\store", keepStore: true, useFec: false);
 
             await WaitUntilAsync(() => vm.Status == "Error", TimeSpan.FromSeconds(5));
 
@@ -202,7 +300,7 @@ public class TaskManagerTests
         Environment.SetEnvironmentVariable("FAKE_NP2PTP_SCENARIO", "fetch-error");
         try
         {
-            var failed = manager.StartFetch("np2ptp:deadbeef", @"C:\downloads", useFec: false);
+            var failed = manager.StartFetch("np2ptp:deadbeef", @"C:\downloads", @"C:\store", keepStore: true, useFec: false);
             await WaitUntilAsync(() => failed.Status == "Error", TimeSpan.FromSeconds(5));
 
             var retried = manager.Retry(failed.Id);

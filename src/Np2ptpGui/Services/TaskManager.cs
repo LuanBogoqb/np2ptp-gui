@@ -3,6 +3,7 @@ namespace Np2ptpGui.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Np2ptpGui.Models;
@@ -39,11 +40,14 @@ public sealed class TaskManager
         }
     }
 
-    public OperationViewModel StartFetch(string link, string outputFolder, bool useFec)
+    public OperationViewModel StartFetch(string link, string reconstructFolder, string storeFolder, bool keepStore, bool useFec)
     {
-        var args = new List<string> { "fetch", link, "--out", outputFolder, "--json" };
+        var id = Guid.NewGuid().ToString("n");
+        var storeSubfolder = Path.Combine(storeFolder, id);
+        var args = new List<string> { "fetch", link, "--out", reconstructFolder, "--store", storeSubfolder, "--json" };
         if (useFec) args.Add("--fec");
-        return Start(OperationType.Fetch, link, args);
+        return Start(id, OperationType.Fetch, link, args,
+            onCompletedSuccessfully: keepStore ? null : () => TryDeleteDirectory(storeSubfolder));
     }
 
     public OperationViewModel StartServe(string nptpFile, string storeFolder, string listenAddress, string trackerUrl)
@@ -52,7 +56,7 @@ public sealed class TaskManager
         {
             "serve", nptpFile, "--store", storeFolder, "--listen", listenAddress, "--tracker", trackerUrl, "--json",
         };
-        return Start(OperationType.Serve, nptpFile, args);
+        return Start(Guid.NewGuid().ToString("n"), OperationType.Serve, nptpFile, args);
     }
 
     public OperationViewModel StartPack(string input, string? outputFile, string storeFolder, bool noCopy)
@@ -60,12 +64,11 @@ public sealed class TaskManager
         var args = new List<string> { "pack", input, "--store", storeFolder, "--json" };
         if (outputFile is not null) { args.Add("--out"); args.Add(outputFile); }
         if (noCopy) args.Add("--no-copy");
-        return Start(OperationType.Pack, input, args);
+        return Start(Guid.NewGuid().ToString("n"), OperationType.Pack, input, args);
     }
 
-    private OperationViewModel Start(OperationType type, string inputOrLink, List<string> args)
+    private OperationViewModel Start(string id, OperationType type, string inputOrLink, List<string> args, Action? onCompletedSuccessfully = null)
     {
-        var id = Guid.NewGuid().ToString("n");
         var vm = new OperationViewModel(id, type, inputOrLink);
         var entry = new TaskHistoryEntry
         {
@@ -116,6 +119,7 @@ public sealed class TaskManager
                         entry.OutputPath = evt.Path;
                         entry.FinishedAt = DateTime.UtcNow;
                         PersistHistory();
+                        onCompletedSuccessfully?.Invoke();
                     }
                     else if (evt.Kind == NdjsonEventKind.Error)
                     {
@@ -179,6 +183,20 @@ public sealed class TaskManager
         return vm;
     }
 
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path)) Directory.Delete(path, recursive: true);
+        }
+        catch (Exception)
+        {
+            // Best-effort cleanup: a locked file or an already-gone directory
+            // must never crash the app, same "best effort" pattern already
+            // used for history persistence failures elsewhere in this class.
+        }
+    }
+
     public async Task StopAsync(string operationId, TimeSpan timeout)
     {
         if (!_runners.TryGetValue(operationId, out var runner)) return;
@@ -233,7 +251,7 @@ public sealed class TaskManager
     public OperationViewModel? Retry(string operationId)
     {
         if (!_startArgsById.TryGetValue(operationId, out var original)) return null;
-        return Start(original.Type, original.InputOrLink, new List<string>(original.Args));
+        return Start(Guid.NewGuid().ToString("n"), original.Type, original.InputOrLink, new List<string>(original.Args));
     }
 
     private void PersistHistory() => _historyStore.Save(_entries.Values.ToList());

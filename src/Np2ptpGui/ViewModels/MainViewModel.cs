@@ -51,7 +51,7 @@ public sealed class MainViewModel : ViewModelBase
         StartDownloadCommand = new RelayCommand(_ =>
         {
             if (string.IsNullOrWhiteSpace(DownloadLinkInput)) return;
-            _taskManager.StartFetch(DownloadLinkInput, _config.DefaultDownloadFolder, useFec: false);
+            _taskManager.StartFetch(DownloadLinkInput, _config.DefaultDownloadFolder, _config.StoreFolder, _config.KeepStoreByDefault, useFec: false);
             DownloadLinkInput = "";
         });
 
