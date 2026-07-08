@@ -78,6 +78,10 @@ public class BinaryManagerTests
         var updated = await manager.CheckForUpdateAsync(default);
 
         Assert.False(updated);
+        // Verify the binary was not rewritten
+        Assert.Equal(new byte[] { 1 }, await File.ReadAllBytesAsync(manager.ExePath));
+        // Verify version.txt was not rewritten
+        Assert.Equal("v1.0.0", (await File.ReadAllTextAsync(Path.Combine(dir, "version.txt"))).Trim());
         Directory.Delete(dir, recursive: true);
     }
 
