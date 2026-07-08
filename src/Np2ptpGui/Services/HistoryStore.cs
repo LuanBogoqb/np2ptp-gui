@@ -19,14 +19,23 @@ public sealed class HistoryStore
     public List<TaskHistoryEntry> Load()
     {
         if (!File.Exists(_filePath)) return new List<TaskHistoryEntry>();
-        var json = File.ReadAllText(_filePath);
-        return JsonSerializer.Deserialize<List<TaskHistoryEntry>>(json) ?? new List<TaskHistoryEntry>();
+        try
+        {
+            var json = File.ReadAllText(_filePath);
+            return JsonSerializer.Deserialize<List<TaskHistoryEntry>>(json) ?? new List<TaskHistoryEntry>();
+        }
+        catch (JsonException)
+        {
+            return new List<TaskHistoryEntry>();
+        }
     }
 
     public void Save(IReadOnlyList<TaskHistoryEntry> entries)
     {
         var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_filePath, json);
+        var tempPath = _filePath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, _filePath, overwrite: true);
     }
 
     public void MarkRunningAsInterrupted()

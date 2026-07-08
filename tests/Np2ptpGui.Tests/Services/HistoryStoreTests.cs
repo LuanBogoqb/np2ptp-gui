@@ -55,6 +55,36 @@ public class HistoryStoreTests
     }
 
     [Fact]
+    public void Load_WhenFileIsCorruptedJson_ReturnsEmptyListInsteadOfThrowing()
+    {
+        var dir = NewTempDir();
+        var store = new HistoryStore(dir);
+        var filePath = Path.Combine(dir, "history.json");
+        File.WriteAllText(filePath, "{ this is not valid json ][");
+
+        var entries = store.Load();
+
+        Assert.Empty(entries);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public void Save_DoesNotLeaveTempFileBehind()
+    {
+        var dir = NewTempDir();
+        var store = new HistoryStore(dir);
+
+        store.Save(new[]
+        {
+            new TaskHistoryEntry { Id = "1", Type = OperationType.Pack, InputOrLink = "a", Status = OperationStatus.Completed },
+        });
+
+        Assert.True(File.Exists(Path.Combine(dir, "history.json")));
+        Assert.False(File.Exists(Path.Combine(dir, "history.json.tmp")));
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
     public void MarkRunningAsInterrupted_OnlyChangesRunningEntries()
     {
         var dir = NewTempDir();

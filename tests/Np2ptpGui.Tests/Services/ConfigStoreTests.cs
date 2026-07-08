@@ -25,6 +25,33 @@ public class ConfigStoreTests
     }
 
     [Fact]
+    public void Load_WhenFileIsCorruptedJson_ReturnsDefaultsInsteadOfThrowing()
+    {
+        var dir = NewTempDir();
+        var store = new ConfigStore(dir);
+        var filePath = Path.Combine(dir, "config.json");
+        File.WriteAllText(filePath, "{ not valid json");
+
+        var config = store.Load();
+
+        Assert.Equal("", config.BinaryPath);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public void Save_DoesNotLeaveTempFileBehind()
+    {
+        var dir = NewTempDir();
+        var store = new ConfigStore(dir);
+
+        store.Save(new AppConfig { BinaryPath = @"C:\bins\np2ptp.exe" });
+
+        Assert.True(File.Exists(Path.Combine(dir, "config.json")));
+        Assert.False(File.Exists(Path.Combine(dir, "config.json.tmp")));
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
     public void SaveThenLoad_RoundTripsAllFields()
     {
         var dir = NewTempDir();

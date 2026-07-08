@@ -17,13 +17,22 @@ public sealed class ConfigStore
     public AppConfig Load()
     {
         if (!File.Exists(_filePath)) return new AppConfig();
-        var json = File.ReadAllText(_filePath);
-        return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+        try
+        {
+            var json = File.ReadAllText(_filePath);
+            return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+        }
+        catch (JsonException)
+        {
+            return new AppConfig();
+        }
     }
 
     public void Save(AppConfig config)
     {
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_filePath, json);
+        var tempPath = _filePath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, _filePath, overwrite: true);
     }
 }
