@@ -2,13 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Np2ptpGui.Controls">
-    <UserControl.Resources>
-        <ResourceDictionary Source="/Np2ptpGui;component/Controls/HintTextBoxStyle.xaml" />
-    </UserControl.Resources>
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBox Width="500" Text="{Binding DownloadLinkInput, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Cole aqui um link np2ptp:... ou caminho de um .nptp" />
+                     controls:HintBehavior.Hint="Cole aqui um link np2ptp:... ou caminho de um .nptp" />
             <Button Content="+ New download" Command="{Binding StartDownloadCommand}" Margin="10,0,0,0" />
         </StackPanel>
         <ListView ItemsSource="{Binding FetchOperations}">
