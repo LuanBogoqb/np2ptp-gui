@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Np2ptpGui\Np2ptpGui.csproj" />
     <ProjectReference Include="..\helpers\CtrlSignalTestHelper\CtrlSignalTestHelper.csproj" />
+    <ProjectReference Include="..\helpers\FakeNp2ptpHelper\FakeNp2ptpHelper.csproj" />
   </ItemGroup>
 
 </Project>
