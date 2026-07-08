@@ -21,7 +21,19 @@ public sealed class TrayIconManager : IDisposable
 
         var menu = new ContextMenuStrip();
         menu.Items.Add("Open", null, (_, _) => ShowMainWindow());
-        menu.Items.Add("Exit", null, async (_, _) => await ExitAsync());
+        menu.Items.Add("Exit", null, async (_, _) =>
+        {
+            try
+            {
+                await ExitAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to exit cleanly:\n{ex.Message}",
+                    "np2ptp-gui", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
 
         _notifyIcon = new NotifyIcon
         {

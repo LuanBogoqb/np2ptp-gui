@@ -2,6 +2,7 @@ namespace Np2ptpGui.ViewModels;
 
 using System;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Data;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
@@ -68,7 +69,16 @@ public sealed class MainViewModel : ViewModelBase
 
         StopOperationCommand = new RelayCommand(async param =>
         {
-            if (param is string id) await _taskManager.StopAsync(id, TimeSpan.FromSeconds(5));
+            try
+            {
+                if (param is string id) await _taskManager.StopAsync(id, TimeSpan.FromSeconds(5));
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to stop operation:\n{ex.Message}",
+                    "np2ptp-gui", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         });
 
         RetryOperationCommand = new RelayCommand(param =>

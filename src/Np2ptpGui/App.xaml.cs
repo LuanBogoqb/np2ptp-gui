@@ -43,32 +43,43 @@ public partial class App : System.Windows.Application
 
         await binaryManager.TryCheckForUpdateSilentlyAsync(TimeSpan.FromSeconds(3));
 
-        if (string.IsNullOrEmpty(config.DefaultDownloadFolder))
+        try
         {
-            config.DefaultDownloadFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            if (string.IsNullOrEmpty(config.DefaultDownloadFolder))
+            {
+                config.DefaultDownloadFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            }
+            if (string.IsNullOrEmpty(config.StoreFolder))
+            {
+                config.StoreFolder = Path.Combine(appDataDir, "store");
+            }
+            config.BinaryPath = binaryManager.ExePath;
+            configStore.Save(config);
+
+            historyStore.MarkRunningAsInterrupted();
+
+            var taskManager = new TaskManager(
+                binaryManager.ExePath,
+                historyStore,
+                uiDispatch: action => Dispatcher.Invoke(action));
+            var mainViewModel = new MainViewModel(taskManager, config);
+            var settingsViewModel = new SettingsViewModel(configStore, binaryManager, config);
+
+            var mainWindow = new MainWindow { DataContext = mainViewModel };
+            mainWindow.SettingsTab.DataContext = settingsViewModel;
+
+            _trayIconManager = new TrayIconManager(mainWindow, taskManager);
+
+            MainWindow = mainWindow;
+            mainWindow.Show();
         }
-        if (string.IsNullOrEmpty(config.StoreFolder))
+        catch (Exception ex)
         {
-            config.StoreFolder = Path.Combine(appDataDir, "store");
+            System.Windows.MessageBox.Show(
+                $"np2ptp-gui failed to start:\n{ex.Message}",
+                "np2ptp-gui", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
         }
-        configStore.Save(config);
-
-        historyStore.MarkRunningAsInterrupted();
-
-        var taskManager = new TaskManager(
-            binaryManager.ExePath,
-            historyStore,
-            uiDispatch: action => Dispatcher.Invoke(action));
-        var mainViewModel = new MainViewModel(taskManager, config);
-        var settingsViewModel = new SettingsViewModel(configStore, binaryManager, config);
-
-        var mainWindow = new MainWindow { DataContext = mainViewModel };
-        mainWindow.SettingsTab.DataContext = settingsViewModel;
-
-        _trayIconManager = new TrayIconManager(mainWindow, taskManager);
-
-        MainWindow = mainWindow;
-        mainWindow.Show();
     }
 }
