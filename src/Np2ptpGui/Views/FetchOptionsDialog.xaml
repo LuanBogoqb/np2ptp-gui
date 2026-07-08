@@ -1,0 +1,29 @@
+<Window x:Class="Np2ptpGui.Views.FetchOptionsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Np2ptpGui.Controls"
+        Title="Opções do download" Height="280" Width="480"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <StackPanel Margin="10">
+        <Label Content="Pasta de reconstrução (onde o arquivo final vai ficar)" />
+        <DockPanel Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Procurar..." Click="BrowseReconstructFolder_Click" />
+            <TextBox x:Name="ReconstructFolderBox"
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
+        </DockPanel>
+
+        <Label Content="Pasta do store (chunks dessa transferência)" />
+        <DockPanel Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Procurar..." Click="BrowseStoreFolder_Click" />
+            <TextBox x:Name="StoreFolderBox"
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+        </DockPanel>
+
+        <CheckBox x:Name="KeepStoreCheckBox" Content="Manter store depois de concluir" Margin="0,0,0,20" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancelar" Width="80" Click="Cancel_Click" Margin="0,0,10,0" />
+            <Button Content="OK" Width="80" IsDefault="True" Click="Ok_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>
