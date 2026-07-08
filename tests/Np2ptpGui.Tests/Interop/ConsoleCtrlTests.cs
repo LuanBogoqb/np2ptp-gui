@@ -7,6 +7,7 @@ using System.Threading;
 using Np2ptpGui.Interop;
 using Xunit;
 
+[Collection("ConsoleCtrl")]
 public class ConsoleCtrlTests
 {
     [Fact]

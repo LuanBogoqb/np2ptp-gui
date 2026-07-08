@@ -28,41 +28,59 @@ public static class ConsoleCtrl
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleCtrlHandler(IntPtr handlerRoutine, bool add);
 
+    // AttachConsole/FreeConsole/SetConsoleCtrlHandler are all process-wide Win32
+    // state, not per-thread — if two threads run this method concurrently for
+    // two different child processes, one thread's FreeConsole() can detach the
+    // other thread's AttachConsole before it fires GenerateConsoleCtrlEvent,
+    // sending the signal to the wrong console (or losing it) silently. This
+    // semaphore serializes the whole Attach/Generate/Free sequence so only one
+    // caller is ever inside it at a time; concurrent callers queue instead of
+    // racing.
+    private static readonly SemaphoreSlim CtrlLock = new(1, 1);
+
     public static bool TrySendCtrlC(int processId)
     {
-        // AttachConsole fails with ERROR_ACCESS_DENIED if the calling process
-        // is already attached to a console (e.g. a console-subsystem host such
-        // as a test runner). This WPF app never has a console of its own, so
-        // this is a no-op in production; detaching first makes the call work
-        // regardless of the caller's own console state.
-        FreeConsole();
-
-        if (!AttachConsole((uint)processId)) return false;
+        CtrlLock.Wait();
         try
         {
-            // While attached, this process is itself a sibling on the child's
-            // console, so the CTRL_C broadcast below also targets us.
-            // SetConsoleCtrlHandler(NULL, true) makes this process ignore it.
-            SetConsoleCtrlHandler(IntPtr.Zero, true);
-            var sent = GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+            // AttachConsole fails with ERROR_ACCESS_DENIED if the calling process
+            // is already attached to a console (e.g. a console-subsystem host such
+            // as a test runner). This WPF app never has a console of its own, so
+            // this is a no-op in production; detaching first makes the call work
+            // regardless of the caller's own console state.
+            FreeConsole();
 
-            // CRITICAL: GenerateConsoleCtrlEvent only queues delivery; the
-            // ignore flag above must still be in effect when the OS actually
-            // dispatches the event to this process, or the default action
-            // (terminate) applies to us too. This timing protection is NOT
-            // test-only — it is required in production. Any process calling
-            // AttachConsole (including the real WPF app) becomes a sibling on
-            // the child's console and is exposed to the broadcast CTRL_C
-            // regardless of GUI vs. console subsystem. Removing this sleep
-            // reintroduces a self-kill race. Give it a moment.
-            Thread.Sleep(200);
+            if (!AttachConsole((uint)processId)) return false;
+            try
+            {
+                // While attached, this process is itself a sibling on the child's
+                // console, so the CTRL_C broadcast below also targets us.
+                // SetConsoleCtrlHandler(NULL, true) makes this process ignore it.
+                SetConsoleCtrlHandler(IntPtr.Zero, true);
+                var sent = GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
 
-            return sent;
+                // CRITICAL: GenerateConsoleCtrlEvent only queues delivery; the
+                // ignore flag above must still be in effect when the OS actually
+                // dispatches the event to this process, or the default action
+                // (terminate) applies to us too. This timing protection is NOT
+                // test-only — it is required in production. Any process calling
+                // AttachConsole (including the real WPF app) becomes a sibling on
+                // the child's console and is exposed to the broadcast CTRL_C
+                // regardless of GUI vs. console subsystem. Removing this sleep
+                // reintroduces a self-kill race. Give it a moment.
+                Thread.Sleep(200);
+
+                return sent;
+            }
+            finally
+            {
+                SetConsoleCtrlHandler(IntPtr.Zero, false);
+                FreeConsole();
+            }
         }
         finally
         {
-            SetConsoleCtrlHandler(IntPtr.Zero, false);
-            FreeConsole();
+            CtrlLock.Release();
         }
     }
 }

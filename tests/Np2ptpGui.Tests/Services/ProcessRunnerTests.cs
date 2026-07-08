@@ -8,6 +8,7 @@ using Np2ptpGui.Models;
 using Np2ptpGui.Services;
 using Xunit;
 
+[Collection("ConsoleCtrl")]
 public class ProcessRunnerTests
 {
     private static string FakeHelperPath => Path.Combine(AppContext.BaseDirectory, "FakeNp2ptpHelper.exe");
