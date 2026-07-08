@@ -1,9 +1,11 @@
 <UserControl x:Class="Np2ptpGui.Views.ShareView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Np2ptpGui.Controls">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBox Width="500" Text="{Binding PackInputPath, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Width="500" Text="{Binding PackInputPath, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource HintTextBoxStyle}" controls:HintBehavior.Hint="Arquivo ou pasta a compartilhar" />
             <Button Content="+ Pack" Command="{Binding StartPackCommand}" Margin="10,0,0,0" />
         </StackPanel>
         <ListView ItemsSource="{Binding PackOperations}">

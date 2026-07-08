@@ -1,5 +1,24 @@
 ﻿<Application x:Class="Np2ptpGui.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Application.Resources />
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Np2ptpGui.Controls">
+    <Application.Resources>
+        <Style x:Key="HintTextBoxStyle" TargetType="TextBox">
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <VisualBrush AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                <VisualBrush.Visual>
+                                    <TextBlock Foreground="Gray" Margin="4,0,0,0"
+                                               Text="{Binding RelativeSource={RelativeSource AncestorType=TextBox},
+                                                              Path=(controls:HintBehavior.Hint)}" />
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Application.Resources>
 </Application>
