@@ -13,5 +13,8 @@
         <TabItem Header="Share">
             <views:ShareView />
         </TabItem>
+        <TabItem Header="Settings">
+            <views:SettingsView x:Name="SettingsTab" />
+        </TabItem>
     </TabControl>
 </Window>

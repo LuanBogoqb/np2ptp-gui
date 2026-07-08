@@ -1,0 +1,26 @@
+<UserControl x:Class="Np2ptpGui.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="10">
+        <Label Content="np2ptp.exe path" />
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Content="Check for update" Command="{Binding CheckForUpdateCommand}" />
+            <TextBox Text="{Binding BinaryPath}" IsReadOnly="True" />
+        </DockPanel>
+        <TextBlock Text="{Binding UpdateStatus}" Margin="0,4,0,10" />
+
+        <Label Content="Default download folder" />
+        <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+        <Label Content="Store folder" />
+        <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+        <Label Content="Default listen address" />
+        <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+        <Label Content="Tracker URL" />
+        <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+
+        <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Width="80" />
+    </StackPanel>
+</UserControl>
