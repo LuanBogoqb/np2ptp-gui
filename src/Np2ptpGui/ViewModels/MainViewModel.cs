@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Data;
 using Np2ptpGui.Models;
 using Np2ptpGui.Services;
+using Np2ptpGui.Views;
 
 public sealed class MainViewModel : ViewModelBase
 {
@@ -51,7 +52,26 @@ public sealed class MainViewModel : ViewModelBase
         StartDownloadCommand = new RelayCommand(_ =>
         {
             if (string.IsNullOrWhiteSpace(DownloadLinkInput)) return;
-            _taskManager.StartFetch(DownloadLinkInput, _config.DefaultDownloadFolder, _config.StoreFolder, _config.KeepStoreByDefault, useFec: false);
+
+            string reconstructFolder;
+            string storeFolder;
+            bool keepStore;
+            if (_config.AlwaysUseDownloadDefaults)
+            {
+                reconstructFolder = _config.DefaultDownloadFolder;
+                storeFolder = _config.StoreFolder;
+                keepStore = _config.KeepStoreByDefault;
+            }
+            else
+            {
+                var dialog = new FetchOptionsDialog(_config.DefaultDownloadFolder, _config.StoreFolder, _config.KeepStoreByDefault);
+                if (dialog.ShowDialog() != true) return; // cancelled - link stays typed, nothing starts
+                reconstructFolder = dialog.ReconstructFolder;
+                storeFolder = dialog.StoreFolder;
+                keepStore = dialog.KeepStore;
+            }
+
+            _taskManager.StartFetch(DownloadLinkInput, reconstructFolder, storeFolder, keepStore, useFec: false);
             DownloadLinkInput = "";
         });
 
