@@ -9,4 +9,5 @@ public sealed class AppConfig
     public string TrackerUrl { get; set; } = "";
     public bool AlwaysUseDownloadDefaults { get; set; } = false;
     public bool KeepStoreByDefault { get; set; } = true;
+    public string ThemeFamily { get; set; } = "XpLuna";
 }

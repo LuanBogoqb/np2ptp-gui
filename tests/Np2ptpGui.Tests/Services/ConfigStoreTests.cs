@@ -25,6 +25,21 @@ public class ConfigStoreTests
         Assert.Equal("/ip4/0.0.0.0/udp/0/quic-v1", config.DefaultListenAddress);
         Assert.False(config.AlwaysUseDownloadDefaults);
         Assert.True(config.KeepStoreByDefault);
+        Assert.Equal("XpLuna", config.ThemeFamily);
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public void Load_WhenThemeFamilyIsUnrecognized_FallsBackToDefault()
+    {
+        var dir = NewTempDir();
+        var store = new ConfigStore(dir);
+        var filePath = Path.Combine(dir, "config.ini");
+        File.WriteAllText(filePath, "ThemeFamily=SomeFutureThemeNotYetInvented\n");
+
+        var config = store.Load();
+
+        Assert.Equal("XpLuna", config.ThemeFamily);
         Directory.Delete(dir, recursive: true);
     }
 
@@ -70,6 +85,7 @@ public class ConfigStoreTests
             TrackerUrl = "https://tracker.example",
             AlwaysUseDownloadDefaults = true,
             KeepStoreByDefault = false,
+            ThemeFamily = "Modern",
         };
 
         store.Save(original);
@@ -82,6 +98,7 @@ public class ConfigStoreTests
         Assert.Equal(original.TrackerUrl, loaded.TrackerUrl);
         Assert.Equal(original.AlwaysUseDownloadDefaults, loaded.AlwaysUseDownloadDefaults);
         Assert.Equal(original.KeepStoreByDefault, loaded.KeepStoreByDefault);
+        Assert.Equal(original.ThemeFamily, loaded.ThemeFamily);
         Directory.Delete(dir, recursive: true);
     }
 
