@@ -4,13 +4,36 @@
 > (`docs/superpowers/specs/2026-07-08-xp-visual-theme-design.md`). Independent of the deferred
 > XP sub-projects (cursors, sounds, Clippy) — those stay XP-only and untouched by this spec.
 
+> **Amendment (2026-07-09, during implementation):** the original design below made
+> `MainWindow`/`FetchOptionsDialog` inherit `Wpf.Ui.Controls.FluentWindow` unconditionally to get a
+> real Mica window backdrop. Empirically, `FluentWindow` rendered a **completely blank window** in
+> this environment — confirmed via three independent methods (GDI screenshot, `PrintWindow` with
+> `PW_RENDERFULLCONTENT`, and a UI Automation tree walk showing zero content children) — even for
+> the XP Luna family with `WindowBackdropType.None`, i.e. even when Modern was never selected. It
+> only started rendering *anything* once the WPF-UI-documented pattern was followed in full
+> (`ExtendsContentIntoTitleBar="True"` + a `ui:TitleBar` + `WindowBackdropType="Mica"`), and even
+> then only the Mica tint appeared, not the actual content. Taking over the title bar this way also
+> conflicts with XP Luna's own established constraint (native Windows chrome only, see the XP spec's
+> Out-of-scope list) — there is no way to keep FluentWindow for Modern only, since the base class is
+> fixed at compile time (see Architecture, original text below) and both families share the same
+> compiled `MainWindow`/`FetchOptionsDialog` classes.
+>
+> Decision: **drop `FluentWindow` and real Mica entirely.** `MainWindow`/`FetchOptionsDialog` stay
+> plain `Window` for both families, unchanged from what's already shipped. Modern is implemented by
+> merging WPF-UI's own Fluent control resource dictionaries (via `ApplicationThemeManager.Apply`)
+> the same way XP Luna merges its own — this still delivers Fluent-styled Button/TextBox/ListView/
+> etc. and the real Windows accent color, just without a translucent window backdrop. Every mention
+> of `FluentWindow`/Mica/window backdrop below is superseded by this amendment; read Architecture
+> with that in mind. This does not affect Tasks 1 (config field) or 2 (package reference), which are
+> unchanged and already complete.
+
 ## Goal
 
-Give np2ptp-gui a second, selectable UI theme, "Modern", that actually looks and feels like
-Windows 11 (Fluent design, real Mica window backdrop, system accent color, light/dark that
-follows the Windows setting) — so the app isn't stuck looking like it only knows how to impersonate
-Windows XP. User picks XP Luna or Modern in Settings; XP Luna remains the default for existing
-behavior continuity.
+Give np2ptp-gui a second, selectable UI theme, "Modern", that looks and feels like Windows 11
+(Fluent-styled controls, system accent color, light/dark that follows the Windows setting) — so the
+app isn't stuck looking like it only knows how to impersonate Windows XP. User picks XP Luna or
+Modern in Settings; XP Luna remains the default for existing behavior continuity. (Real Mica window
+backdrop was originally in scope — see the Amendment above for why it was dropped.)
 
 ## Background
 
@@ -30,8 +53,6 @@ for light/dark, and `ApplicationAccentColorManager` for reading the Windows acce
   then).
 - "Modern" theme family with Light + Dark variants, auto-following the Windows theme setting via
   the existing `WindowsThemeService`, exactly like XP Luna's light/dark already does.
-- Real Mica window backdrop (not just tinted colors) on `MainWindow` and `FetchOptionsDialog`,
-  active only when Modern is selected.
 - Windows accent color (via `ApplicationAccentColorManager.ApplyWindowsAccentColor()`) drives
   Modern's accent/highlight color — not a fixed blue.
 - A theme-family selector in Settings (XP Luna / Modern), persisted to `config.ini` via a new
@@ -50,16 +71,15 @@ for light/dark, and `ApplicationAccentColorManager` for reading the Windows acce
 
 ## Architecture
 
-**The compiled-base-class problem:** a XAML file's root element fixes its code-behind class's base
-type at compile time — `MainWindow`/`FetchOptionsDialog` can't be `: Window` in one run and
-`: Wpf.Ui.Controls.FluentWindow` in another depending on which theme is active. Since `FluentWindow`
-is itself a `Window` subclass that behaves like a plain window when no backdrop is applied, the
-fix is to make `MainWindow` and `FetchOptionsDialog` inherit from `FluentWindow`
-**unconditionally**, and decide at runtime whether to activate Mica:
-- XP Luna active → `WindowBackdropType.None`, XP's own `ThemeManager`/resource dictionaries apply
-  exactly as today. Visually unchanged from the current shipped behavior.
-- Modern active → `WindowBackdropType.Mica`, WPF-UI's Fluent resource dictionaries and
-  `ApplicationThemeManager`/`ApplicationAccentColorManager` apply instead of XP's dictionaries.
+`MainWindow` and `FetchOptionsDialog` stay plain `Window` for both families — no base class change,
+no per-window setup at all. Modern is implemented purely via `Application`-level resource merging,
+the same mechanism XP Luna already uses (`Np2ptpGui.Themes.ThemeManager` merging
+`XpControlStyles.xaml`/`XpColors.*.xaml` into `Application.Current.Resources.MergedDictionaries`) —
+except for Modern, the dictionaries being merged are WPF-UI's own, via its `ApplicationThemeManager`
+API rather than a hand-written `ResourceDictionary`. Since implicit (TargetType-keyed) styles resolve
+through the standard resource-lookup chain regardless of which `Window` subclass hosts them, this
+gives Fluent-styled `Button`/`TextBox`/`ListView`/etc. on an ordinary native-chrome `Window`, with no
+compiled-base-class conflict between the two families to resolve.
 
 **Startup flow (`App.xaml.cs`):**
 1. Read `AppConfig.ThemeFamily`.
@@ -67,8 +87,8 @@ fix is to make `MainWindow` and `FetchOptionsDialog` inherit from `FluentWindow`
    as shipped today.
 3. If `"Modern"`: construct `WindowsThemeService` (reused, not duplicated), call
    `ApplicationThemeManager.Apply(isLight ? ApplicationTheme.Light : ApplicationTheme.Dark)` and
-   `ApplicationAccentColorManager.ApplyWindowsAccentColor()`, and set
-   `WindowBackdropType.Mica` on each `FluentWindow` as it's constructed.
+   `ApplicationAccentColorManager.ApplyWindowsAccentColor()`. No window-level setup — `MainWindow`/
+   `FetchOptionsDialog` need no changes at all for either family.
 4. Live light/dark switching reuses the existing `WindowsThemeService.ThemeChanged` event in both
    cases — only the handler differs (XP's `ThemeManager.ApplyTheme` vs WPF-UI's
    `ApplicationThemeManager.Apply`). Switching the *family* itself is restart-only (Scope, above).
@@ -90,7 +110,8 @@ control this app happens to use.
 1. App starts → reads `ThemeFamily` from config → branches to either the existing XP flow or the
    new Modern flow (above).
 2. Modern flow: `WindowsThemeService` reads the registry once → `ApplicationThemeManager.Apply`
-   picks Light/Dark → accent color applied → each `FluentWindow` gets `Mica` backdrop.
+   picks Light/Dark → accent color applied. Both windows pick up the Fluent control styles
+   automatically the moment they're constructed, same as XP Luna today.
 3. User changes the Windows theme while running (either family) → existing
    `SystemEvents.UserPreferenceChanged` → `WindowsThemeService.ThemeChanged` → the active family's
    handler re-applies (XP's per-dictionary swap, or WPF-UI's `ApplicationThemeManager.Apply`).
@@ -113,11 +134,12 @@ control this app happens to use.
   set) — same pattern as the existing `AlwaysUseDownloadDefaults`/`KeepStoreByDefault` tests.
 - No unit tests for the Fluent visuals themselves (not meaningfully unit-testable, same reasoning
   as XP Luna) — manual verification instead, mandatory per this repo's established practice:
-  - Launch with Modern selected, Windows in light mode: confirm real Mica backdrop, accent color
-    matches the Windows setting, all 4 tabs + Settings + FetchOptionsDialog legible and styled.
+  - Launch with Modern selected, Windows in light mode: confirm Fluent-styled controls, accent color
+    matches the Windows setting, all 4 tabs + Settings + FetchOptionsDialog legible and styled,
+    native window chrome intact (no blank window — this exact regression was caught once already).
   - Flip Windows to dark without restarting: confirm Modern's light/dark switches live.
   - Switch `ThemeFamily` to XP Luna in Settings, restart: confirm XP Luna renders exactly as it
-    does today (no Mica leaking through, no WPF-UI resource bleed).
+    does today (no WPF-UI resource bleed).
   - Switch back to Modern, restart: confirm it re-applies correctly.
 
 ## Global Constraints
@@ -125,9 +147,9 @@ control this app happens to use.
 - This spec explicitly **overrides** XP Luna's "no new NuGet dependency" constraint — `Wpf.Ui` is
   a new, real dependency, scoped to the Modern theme family only (XP Luna's own code paths stay
   dependency-free).
-- `MainWindow` and `FetchOptionsDialog` change base class from `Window` to
-  `Wpf.Ui.Controls.FluentWindow` unconditionally (needed for the restart-time backdrop toggle to
-  work at all) — this is a real, if low-risk, structural change to both windows, not additive-only.
+- `MainWindow` and `FetchOptionsDialog` stay plain `Window` for both families — no base class
+  change (see Amendment at the top of this document for why this was walked back from the original
+  `FluentWindow` design).
 - Every task must build cleanly and be independently, manually verified in the running app (both
   families, both light/dark, a real restart-triggered family switch) before being considered done —
   matches this repo's established SDD task-review discipline, and directly answers the lesson
