@@ -4,14 +4,24 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
-// Verifies a file's Authenticode signature is cryptographically valid (correct
-// file hash, chains to a trusted root) via WinVerifyTrust - the same Win32 API
-// `signtool verify` itself calls. This is deliberately NOT just reading
-// whichever certificate happens to be embedded in the file:
+// Verifies a file's Authenticode signature is cryptographically valid (the
+// signed hash matches the file's actual content) via WinVerifyTrust - the
+// same Win32 API `signtool verify` itself calls. This is deliberately NOT
+// just reading whichever certificate happens to be embedded in the file:
 // X509Certificate.CreateFromSignedFile alone extracts certificate metadata
 // without validating that it actually, correctly signs the file's content -
 // it would happily "succeed" against a tampered file carrying a stale or
 // mismatched signature block.
+//
+// dwProvFlags is set to WTD_HASH_ONLY_FLAG so WinVerifyTrust checks ONLY
+// signature/hash integrity and skips CA chain-of-trust validation. np2ptp is
+// signed with a self-signed certificate (not issued by a publicly trusted
+// CA) - without this flag, WinVerifyTrust fails with an untrusted-root error
+// on every machine that hasn't manually imported that certificate, even
+// though the file is genuinely untampered and signed by the exact expected
+// cert. BinaryManager already pins the signer's exact thumbprint - that
+// pinning IS the trust decision here, so we don't need (and can't rely on)
+// the OS's own root store to also vouch for the cert.
 //
 // Struct layout matches Microsoft's own reference implementation
 // (github.com/microsoft/workbooks Tools/InstallerVerifier/WinTrust.cs) - an
@@ -29,10 +39,13 @@ public static unsafe class AuthenticodeVerifier
     private const int WtdChoiceFile = 1;
     private const int WtdStateActionVerify = 1;
     private const int WtdStateActionClose = 2;
+    private const int WtdHashOnlyFlag = 0x00000200;
 
     // Returns the signer certificate's SHA1 thumbprint if the file's
-    // Authenticode signature is valid and chains to a trusted root; null if
-    // the file is unsigned, tampered with, or the chain doesn't validate.
+    // Authenticode signature hash is intact; null if the file is unsigned or
+    // has been tampered with (signature no longer matches the content).
+    // Does not require the signer's CA to be trusted by this machine - see
+    // the WtdHashOnlyFlag note above.
     public static string? GetVerifiedSignerThumbprint(string filePath)
     {
         var filePathPtr = Marshal.StringToHGlobalUni(filePath);
@@ -52,6 +65,7 @@ public static unsafe class AuthenticodeVerifier
                 dwUnionChoice = WtdChoiceFile,
                 pFile = &fileInfo,
                 dwStateAction = WtdStateActionVerify,
+                dwProvFlags = WtdHashOnlyFlag,
             };
 
             var actionId = WinTrustActionGenericVerifyV2;
