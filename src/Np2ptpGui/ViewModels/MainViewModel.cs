@@ -65,6 +65,10 @@ public sealed class MainViewModel : ViewModelBase
             else
             {
                 var dialog = new FetchOptionsDialog(_config.DefaultDownloadFolder, _config.StoreFolder, _config.KeepStoreByDefault);
+                if (_config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName)
+                {
+                    Np2ptpGui.Themes.ModernThemeManager.ApplyToWindow(dialog);
+                }
                 if (dialog.ShowDialog() != true) return; // cancelled - link stays typed, nothing starts
                 reconstructFolder = dialog.ReconstructFolder;
                 storeFolder = dialog.StoreFolder;

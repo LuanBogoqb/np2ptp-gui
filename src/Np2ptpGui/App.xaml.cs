@@ -67,7 +67,8 @@ public partial class App : System.Windows.Application
             var settingsViewModel = new SettingsViewModel(configStore, binaryManager, config);
 
             var themeService = new WindowsThemeService();
-            if (config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName)
+            var isModern = config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName;
+            if (isModern)
             {
                 Np2ptpGui.Themes.ModernThemeManager.Initialize(themeService.IsLightTheme());
                 themeService.ThemeChanged += isLight => Np2ptpGui.Themes.ModernThemeManager.ApplyTheme(isLight);
@@ -80,7 +81,7 @@ public partial class App : System.Windows.Application
 
             var mainWindow = new MainWindow { DataContext = mainViewModel };
             mainWindow.SettingsTab.DataContext = settingsViewModel;
-            if (config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName)
+            if (isModern)
             {
                 Np2ptpGui.Themes.ModernThemeManager.ApplyToWindow(mainWindow);
             }
