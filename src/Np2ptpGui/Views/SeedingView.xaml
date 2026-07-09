@@ -1,9 +1,11 @@
 <UserControl x:Class="Np2ptpGui.Views.SeedingView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Np2ptpGui.Controls">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBox Width="500" Text="{Binding ServeFilePath, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Width="500" Text="{Binding ServeFilePath, UpdateSourceTrigger=PropertyChanged}"
+                     controls:HintBehavior.Hint="Arquivo ou pasta a compartilhar (seed)" />
             <Button Content="+ Seed" Command="{Binding StartServeCommand}" Margin="10,0,0,0" />
         </StackPanel>
         <ListView ItemsSource="{Binding ServeOperations}">

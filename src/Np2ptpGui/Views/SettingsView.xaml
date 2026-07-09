@@ -2,31 +2,34 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Np2ptpGui.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="10">
         <Label Content="np2ptp.exe path" />
         <DockPanel>
-            <Button DockPanel.Dock="Right" Content="Check for update" Command="{Binding CheckForUpdateCommand}" />
+            <Button DockPanel.Dock="Right" Content="Check for update" Command="{Binding CheckForUpdateCommand}" Margin="6,0,0,0" />
             <TextBox Text="{Binding BinaryPath}" IsReadOnly="True" />
         </DockPanel>
         <TextBlock Text="{Binding UpdateStatus}" Margin="0,4,0,10" />
 
         <Label Content="Default download folder" />
         <DockPanel Margin="0,0,0,10">
-            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" />
+            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" Margin="6,0,0,0" />
             <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
                      controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
         </DockPanel>
 
         <Label Content="Store folder" />
         <DockPanel Margin="0,0,0,10">
-            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" />
+            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" Margin="6,0,0,0" />
             <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
-                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store"
+                     MaxWidth="380" HorizontalAlignment="Left" />
         </DockPanel>
 
         <Label Content="Default listen address" />
         <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}"
                  controls:HintBehavior.Hint="Ex: /ip4/0.0.0.0/udp/0/quic-v1"
+                 HorizontalAlignment="Left" Width="320"
                  Margin="0,0,0,10" />
 
         <Label Content="Tracker URL" />
@@ -45,6 +48,7 @@
         </ComboBox>
         <TextBlock Text="Reinicie o np2ptp para aplicar a troca de tema." Foreground="Gray" FontSize="11" Margin="0,0,0,10" />
 
-        <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Width="80" />
+        <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Padding="16,6" Margin="0,4,0,10" />
     </StackPanel>
+    </ScrollViewer>
 </UserControl>
