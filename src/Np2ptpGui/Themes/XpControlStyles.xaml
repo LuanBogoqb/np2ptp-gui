@@ -11,6 +11,7 @@
     <Style TargetType="{x:Type Window}">
         <Setter Property="FontFamily" Value="{DynamicResource XpFontFamily}" />
         <Setter Property="Background" Value="{DynamicResource XpWindowBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
     </Style>
 
     <Style TargetType="{x:Type Button}">
@@ -54,6 +55,17 @@
         <Setter Property="Padding" Value="4,3" />
     </Style>
 
+    <Style TargetType="{x:Type Label}">
+        <Setter Property="FontFamily" Value="{DynamicResource XpFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="{DynamicResource XpFontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
     <Style TargetType="{x:Type CheckBox}">
         <Setter Property="FontFamily" Value="{DynamicResource XpFontFamily}" />
         <Setter Property="FontSize" Value="12" />
@@ -69,7 +81,7 @@
                                 VerticalAlignment="Center">
                             <Path x:Name="CheckMark"
                                   Data="M 1,5 L 5,9 L 12,1"
-                                  Stroke="{DynamicResource XpAccentBottomBrush}"
+                                  Stroke="{DynamicResource XpTextBrush}"
                                   StrokeThickness="2"
                                   Visibility="Collapsed" />
                         </Border>
@@ -83,6 +95,66 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ListView}">
+        <Setter Property="Background" Value="{DynamicResource XpControlBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource XpControlBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style TargetType="{x:Type ListViewItem}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+        <Setter Property="Padding" Value="4,2" />
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource XpAccentGradientBrush}" />
+                <Setter Property="Foreground" Value="White" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type TabControl}">
+        <Setter Property="Background" Value="{DynamicResource XpWindowBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource XpControlBorderBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabItem}">
+                    <Border x:Name="TabBorder"
+                            BorderThickness="1,1,1,0"
+                            BorderBrush="{DynamicResource XpControlBorderBrush}"
+                            Background="Transparent"
+                            Margin="1,0,1,0">
+                        <ContentPresenter ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource XpControlBackgroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type GridViewColumnHeader}">
+        <Setter Property="Background" Value="{DynamicResource XpControlBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource XpTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource XpControlBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,1,1" />
+        <Setter Property="Padding" Value="6,3" />
     </Style>
 
 </ResourceDictionary>
