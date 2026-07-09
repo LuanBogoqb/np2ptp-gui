@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Np2ptpGui.Controls"
         Title="Opções do download" Height="280" Width="480"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Style="{DynamicResource {x:Type Window}}">
     <StackPanel Margin="10">
         <Label Content="Pasta de reconstrução (onde o arquivo final vai ficar)" />
         <DockPanel Margin="0,0,0,10">
