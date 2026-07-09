@@ -1,5 +1,6 @@
 namespace Np2ptpGui.Themes;
 
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui.Appearance;
@@ -9,11 +10,20 @@ public static class ModernThemeManager
 {
     public const string FamilyName = "Modern";
 
+    private static readonly Uri ListFixUri = new("/Np2ptpGui;component/Themes/ModernListFix.xaml", UriKind.Relative);
+
     public static void Initialize(bool isLight)
     {
         var merged = Application.Current.Resources.MergedDictionaries;
         merged.Add(new ControlsDictionary());
         merged.Add(new ThemesDictionary { Theme = isLight ? ApplicationTheme.Light : ApplicationTheme.Dark });
+        // WPF-UI ships no implicit ListView/GridViewColumnHeader style (or its own
+        // template doesn't route through the public Background property) - both
+        // brush keys below are the same ones ApplyToWindow uses, confirmed resolving
+        // now that ControlsDictionary/ThemesDictionary are actually merged (an
+        // earlier attempt at this exact fix predated that merge and never had a
+        // chance - the keys didn't exist yet at that point).
+        merged.Add(new ResourceDictionary { Source = ListFixUri });
         ApplicationAccentColorManager.ApplySystemAccent();
     }
 
