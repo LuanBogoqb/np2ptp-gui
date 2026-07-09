@@ -36,7 +36,7 @@ public class BinaryManagerTests
         }));
 
     [Fact]
-    public async Task EnsureBinaryAsync_WhenMissing_DownloadsExeAndWritesVersionFile()
+    public async Task EnsureBinaryAsync_WhenMissing_DownloadsExe()
     {
         var dir = NewTempDir();
         var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 1, 2, 3 }));
@@ -46,7 +46,6 @@ public class BinaryManagerTests
 
         Assert.True(File.Exists(manager.ExePath));
         Assert.Equal(new byte[] { 1, 2, 3 }, await File.ReadAllBytesAsync(manager.ExePath));
-        Assert.Equal("v1.0.0", (await File.ReadAllTextAsync(Path.Combine(dir, "version.txt"))).Trim());
         Directory.Delete(dir, recursive: true);
     }
 
@@ -68,39 +67,68 @@ public class BinaryManagerTests
     }
 
     [Fact]
-    public async Task CheckForUpdateAsync_WhenTagUnchanged_ReturnsFalseAndDoesNotRewriteBinary()
+    public async Task CheckForUpdateAsync_WhenProductVersionMatchesTagMinusVPrefix_ReturnsFalseAndDoesNotRewriteBinary()
     {
         var dir = NewTempDir();
-        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 1 }));
-        var manager = new BinaryManager(client, dir);
-        await manager.EnsureBinaryAsync(default);
+        Directory.CreateDirectory(dir);
+        await File.WriteAllBytesAsync(Path.Combine(dir, "np2ptp.exe"), new byte[] { 1 });
+        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 9, 9 }));
+        // Simulates FileVersionInfo.ProductVersion on the installed exe reading "1.0.0" -
+        // the GitHub tag is "v1.0.0" - CheckForUpdateAsync must strip the "v" to match.
+        var manager = new BinaryManager(client, dir, _ => "1.0.0");
 
         var updated = await manager.CheckForUpdateAsync(default);
 
         Assert.False(updated);
-        // Verify the binary was not rewritten
         Assert.Equal(new byte[] { 1 }, await File.ReadAllBytesAsync(manager.ExePath));
-        // Verify version.txt was not rewritten
-        Assert.Equal("v1.0.0", (await File.ReadAllTextAsync(Path.Combine(dir, "version.txt"))).Trim());
         Directory.Delete(dir, recursive: true);
     }
 
     [Fact]
-    public async Task CheckForUpdateAsync_WhenTagChanged_DownloadsNewBinaryAndReturnsTrue()
+    public async Task CheckForUpdateAsync_WhenProductVersionDiffersFromTag_DownloadsNewBinaryAndReturnsTrue()
     {
         var dir = NewTempDir();
-        var v1Client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 1 }));
-        var manager = new BinaryManager(v1Client, dir);
-        await manager.EnsureBinaryAsync(default);
+        Directory.CreateDirectory(dir);
+        await File.WriteAllBytesAsync(Path.Combine(dir, "np2ptp.exe"), new byte[] { 1 });
+        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV2, new byte[] { 2, 2 }));
+        var manager = new BinaryManager(client, dir, _ => "1.0.0");
 
-        var v2Client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV2, new byte[] { 2, 2 }));
-        var managerWithV2Client = new BinaryManager(v2Client, dir);
-
-        var updated = await managerWithV2Client.CheckForUpdateAsync(default);
+        var updated = await manager.CheckForUpdateAsync(default);
 
         Assert.True(updated);
         Assert.Equal(new byte[] { 2, 2 }, await File.ReadAllBytesAsync(manager.ExePath));
-        Assert.Equal("v2.0.0", (await File.ReadAllTextAsync(Path.Combine(dir, "version.txt"))).Trim());
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public async Task CheckForUpdateAsync_WhenNoBinaryPresentYet_TreatsAsNeedingUpdate()
+    {
+        var dir = NewTempDir();
+        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 1 }));
+        var readerCalled = false;
+        var manager = new BinaryManager(client, dir, _ => { readerCalled = true; return "1.0.0"; });
+
+        var updated = await manager.CheckForUpdateAsync(default);
+
+        Assert.True(updated);
+        Assert.False(readerCalled); // no exe on disk yet - must not even attempt to read its version
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
+    public async Task CheckForUpdateAsync_WhenProductVersionUnreadable_TreatsAsNeedingUpdate()
+    {
+        var dir = NewTempDir();
+        Directory.CreateDirectory(dir);
+        await File.WriteAllBytesAsync(Path.Combine(dir, "np2ptp.exe"), new byte[] { 1 });
+        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV1, new byte[] { 9 }));
+        // Simulates FileVersionInfo throwing/returning null for a malformed or
+        // version-resource-less exe - must fall back to "needs update", not crash.
+        var manager = new BinaryManager(client, dir, _ => null);
+
+        var updated = await manager.CheckForUpdateAsync(default);
+
+        Assert.True(updated);
         Directory.Delete(dir, recursive: true);
     }
 
