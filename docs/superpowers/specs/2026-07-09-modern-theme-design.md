@@ -130,12 +130,16 @@ premature.
 
 1. App starts → reads `ThemeFamily` from config → branches to either the existing XP flow or the
    new Modern flow (above).
-2. Modern flow: `WindowsThemeService` reads the registry once → `ApplicationThemeManager.Apply`
-   picks Light/Dark → accent color applied. Both windows pick up the Fluent control styles
-   automatically the moment they're constructed, same as XP Luna today.
+2. Modern flow: `WindowsThemeService` reads the registry once → `ModernThemeManager.Initialize`
+   merges `ControlsDictionary`/`ThemesDictionary`/`ModernListFix.xaml` and applies the accent color
+   → `Button`/`TextBox`/`ListView`/etc. pick up Fluent styles automatically via implicit resolution,
+   but each `Window` still needs `ApplyToWindow` called on it explicitly for its own
+   Background/Foreground (a plain `Window` has no implicit style of its own to pick this up
+   automatically).
 3. User changes the Windows theme while running (either family) → existing
    `SystemEvents.UserPreferenceChanged` → `WindowsThemeService.ThemeChanged` → the active family's
-   handler re-applies (XP's per-dictionary swap, or WPF-UI's `ApplicationThemeManager.Apply`).
+   handler re-applies (XP's `ThemeManager.ApplyTheme` or Modern's `ModernThemeManager.ApplyTheme` —
+   both remove/re-insert a fresh colors dictionary rather than mutating one in place).
 4. User changes `ThemeFamily` in Settings → saved to `config.ini` → notice shown → takes effect on
    next launch.
 
