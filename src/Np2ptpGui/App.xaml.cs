@@ -67,11 +67,23 @@ public partial class App : System.Windows.Application
             var settingsViewModel = new SettingsViewModel(configStore, binaryManager, config);
 
             var themeService = new WindowsThemeService();
-            Np2ptpGui.Themes.ThemeManager.Initialize(themeService.IsLightTheme());
-            themeService.ThemeChanged += isLight => Np2ptpGui.Themes.ThemeManager.ApplyTheme(isLight);
+            if (config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName)
+            {
+                Np2ptpGui.Themes.ModernThemeManager.Initialize(themeService.IsLightTheme());
+                themeService.ThemeChanged += isLight => Np2ptpGui.Themes.ModernThemeManager.ApplyTheme(isLight);
+            }
+            else
+            {
+                Np2ptpGui.Themes.ThemeManager.Initialize(themeService.IsLightTheme());
+                themeService.ThemeChanged += isLight => Np2ptpGui.Themes.ThemeManager.ApplyTheme(isLight);
+            }
 
             var mainWindow = new MainWindow { DataContext = mainViewModel };
             mainWindow.SettingsTab.DataContext = settingsViewModel;
+            if (config.ThemeFamily == Np2ptpGui.Themes.ModernThemeManager.FamilyName)
+            {
+                Np2ptpGui.Themes.ModernThemeManager.ApplyToWindow(mainWindow);
+            }
 
             _trayIconManager = new TrayIconManager(mainWindow, taskManager);
 
