@@ -11,22 +11,27 @@
         <ListView ItemsSource="{Binding FetchOperations}">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Link" DisplayMemberBinding="{Binding InputOrLink}" Width="300" />
-                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100" />
-                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding DetailText}" Width="250" />
-                    <GridViewColumn Header="Progress" Width="150">
+                    <GridViewColumn Header="Link" DisplayMemberBinding="{Binding InputOrLink}" Width="220" />
+                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="80" />
+                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding DetailText}" Width="180" />
+                    <GridViewColumn Header="Progress" Width="120">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressFraction, Mode=OneWay}" Width="130" Height="16" />
+                                <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressFraction, Mode=OneWay}" Width="100" Height="16" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="" Width="80">
+                    <GridViewColumn Header="" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Retry"
-                                        Command="{Binding DataContext.RetryOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                        CommandParameter="{Binding Id}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Stop" Padding="8,4"
+                                            Command="{Binding DataContext.StopOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button Content="Retry" Padding="8,4" Margin="4,0,0,0"
+                                            Command="{Binding DataContext.RetryOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding Id}" />
+                                </StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

@@ -52,7 +52,9 @@
                 </DockPanel>
 
                 <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,0,0,4" />
-                <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" />
+                <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" Margin="0,0,0,4" />
+                <CheckBox Content="Auto-semear ao terminar um download" IsChecked="{Binding AutoSeedOnDownloadComplete}" Margin="0,0,0,4" />
+                <CheckBox Content="Auto-semear depois de criar um Pack (Share)" IsChecked="{Binding AutoSeedAfterSharing}" />
             </StackPanel>
         </GroupBox>
 

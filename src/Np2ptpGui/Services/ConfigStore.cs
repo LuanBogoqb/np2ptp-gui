@@ -41,6 +41,12 @@ public sealed class ConfigStore
                     case nameof(AppConfig.KeepStoreByDefault):
                         config.KeepStoreByDefault = TryParseBool(value, config.KeepStoreByDefault);
                         break;
+                    case nameof(AppConfig.AutoSeedOnDownloadComplete):
+                        config.AutoSeedOnDownloadComplete = TryParseBool(value, config.AutoSeedOnDownloadComplete);
+                        break;
+                    case nameof(AppConfig.AutoSeedAfterSharing):
+                        config.AutoSeedAfterSharing = TryParseBool(value, config.AutoSeedAfterSharing);
+                        break;
                     case nameof(AppConfig.ThemeFamily):
                         config.ThemeFamily = value is "XpLuna" or "Modern" ? value : config.ThemeFamily;
                         break;
@@ -79,6 +85,8 @@ public sealed class ConfigStore
                 $"{nameof(AppConfig.TrackerUrl)}={config.TrackerUrl}",
                 $"{nameof(AppConfig.AlwaysUseDownloadDefaults)}={config.AlwaysUseDownloadDefaults.ToString(CultureInfo.InvariantCulture)}",
                 $"{nameof(AppConfig.KeepStoreByDefault)}={config.KeepStoreByDefault.ToString(CultureInfo.InvariantCulture)}",
+                $"{nameof(AppConfig.AutoSeedOnDownloadComplete)}={config.AutoSeedOnDownloadComplete.ToString(CultureInfo.InvariantCulture)}",
+                $"{nameof(AppConfig.AutoSeedAfterSharing)}={config.AutoSeedAfterSharing.ToString(CultureInfo.InvariantCulture)}",
                 $"{nameof(AppConfig.ThemeFamily)}={config.ThemeFamily}",
             };
             var tempPath = _filePath + ".tmp";

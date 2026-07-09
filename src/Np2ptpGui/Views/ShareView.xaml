@@ -13,16 +13,23 @@
         <ListView ItemsSource="{Binding PackOperations}">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Input" DisplayMemberBinding="{Binding InputOrLink}" Width="300" />
-                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="100" />
-                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding DetailText}" Width="250" />
-                    <GridViewColumn Header="Link" DisplayMemberBinding="{Binding ResultLink}" Width="200" />
-                    <GridViewColumn Header="" Width="80">
+                    <GridViewColumn Header="Input" DisplayMemberBinding="{Binding InputOrLink}" Width="260" />
+                    <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="80" />
+                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding DetailText}" Width="220" />
+                    <GridViewColumn Header="" Width="210">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Retry"
-                                        Command="{Binding DataContext.RetryOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                        CommandParameter="{Binding Id}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Copy" Padding="8,4"
+                                            Command="{Binding DataContext.CopyLinkCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button Content="Retry" Padding="8,4" Margin="4,0,0,0"
+                                            Command="{Binding DataContext.RetryOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding Id}" />
+                                    <Button Content="Delete" Padding="8,4" Margin="4,0,0,0"
+                                            Command="{Binding DataContext.DeleteOperationCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding Id}" />
+                                </StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

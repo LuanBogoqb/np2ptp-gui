@@ -2,6 +2,7 @@ namespace Np2ptpGui.ViewModels;
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using Np2ptpGui.Models;
@@ -34,6 +35,8 @@ public sealed class MainViewModel : ViewModelBase
     public RelayCommand StartServeCommand { get; }
     public RelayCommand StopOperationCommand { get; }
     public RelayCommand RetryOperationCommand { get; }
+    public RelayCommand DeleteOperationCommand { get; }
+    public RelayCommand CopyLinkCommand { get; }
     public RelayCommand BrowsePackFileCommand { get; }
     public RelayCommand BrowsePackFolderCommand { get; }
 
@@ -75,14 +78,28 @@ public sealed class MainViewModel : ViewModelBase
                 keepStore = dialog.KeepStore;
             }
 
-            _taskManager.StartFetch(DownloadLinkInput, reconstructFolder, storeFolder, keepStore, useFec: false);
+            _taskManager.StartFetch(DownloadLinkInput, reconstructFolder, storeFolder, keepStore, useFec: false,
+                onCompletedSuccessfully: path =>
+                {
+                    if (_config.AutoSeedOnDownloadComplete && !string.IsNullOrWhiteSpace(path))
+                    {
+                        _taskManager.StartServe(path, _config.StoreFolder, _config.DefaultListenAddress, _config.TrackerUrl);
+                    }
+                });
             DownloadLinkInput = "";
         });
 
         StartPackCommand = new RelayCommand(_ =>
         {
             if (string.IsNullOrWhiteSpace(PackInputPath)) return;
-            _taskManager.StartPack(PackInputPath, null, _config.StoreFolder, noCopy: false);
+            _taskManager.StartPack(PackInputPath, null, _config.StoreFolder, noCopy: false,
+                onCompletedSuccessfully: path =>
+                {
+                    if (_config.AutoSeedAfterSharing && !string.IsNullOrWhiteSpace(path))
+                    {
+                        _taskManager.StartServe(path, _config.StoreFolder, _config.DefaultListenAddress, _config.TrackerUrl);
+                    }
+                });
             PackInputPath = "";
         });
 
@@ -110,6 +127,30 @@ public sealed class MainViewModel : ViewModelBase
         RetryOperationCommand = new RelayCommand(param =>
         {
             if (param is string id) _taskManager.Retry(id);
+        });
+
+        DeleteOperationCommand = new RelayCommand(async param =>
+        {
+            try
+            {
+                if (param is string id) await _taskManager.RemoveOperationAsync(id);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to delete operation:\n{ex.Message}",
+                    "np2ptp-gui", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        });
+
+        CopyLinkCommand = new RelayCommand(param =>
+        {
+            if (param is not string id) return;
+            var vm = _taskManager.Operations.FirstOrDefault(o => o.Id == id);
+            if (vm?.ResultLink is { Length: > 0 } link)
+            {
+                System.Windows.Clipboard.SetText(link);
+            }
         });
 
         BrowsePackFileCommand = new RelayCommand(_ =>

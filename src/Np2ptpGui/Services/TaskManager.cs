@@ -40,14 +40,17 @@ public sealed class TaskManager
         }
     }
 
-    public OperationViewModel StartFetch(string link, string reconstructFolder, string storeFolder, bool keepStore, bool useFec)
+    public OperationViewModel StartFetch(string link, string reconstructFolder, string storeFolder, bool keepStore, bool useFec, Action<string?>? onCompletedSuccessfully = null)
     {
         var id = Guid.NewGuid().ToString("n");
         var storeSubfolder = Path.Combine(storeFolder, id);
         var args = new List<string> { "fetch", link, "--out", reconstructFolder, "--store", storeSubfolder, "--json" };
         if (useFec) args.Add("--fec");
-        return Start(id, OperationType.Fetch, link, args,
-            onCompletedSuccessfully: keepStore ? null : () => TryDeleteDirectory(storeSubfolder));
+        return Start(id, OperationType.Fetch, link, args, onCompletedSuccessfully: path =>
+        {
+            if (!keepStore) TryDeleteDirectory(storeSubfolder);
+            onCompletedSuccessfully?.Invoke(path);
+        });
     }
 
     public OperationViewModel StartServe(string nptpFile, string storeFolder, string listenAddress, string trackerUrl)
@@ -59,15 +62,15 @@ public sealed class TaskManager
         return Start(Guid.NewGuid().ToString("n"), OperationType.Serve, nptpFile, args);
     }
 
-    public OperationViewModel StartPack(string input, string? outputFile, string storeFolder, bool noCopy)
+    public OperationViewModel StartPack(string input, string? outputFile, string storeFolder, bool noCopy, Action<string?>? onCompletedSuccessfully = null)
     {
         var args = new List<string> { "pack", input, "--store", storeFolder, "--json" };
         if (outputFile is not null) { args.Add("--out"); args.Add(outputFile); }
         if (noCopy) args.Add("--no-copy");
-        return Start(Guid.NewGuid().ToString("n"), OperationType.Pack, input, args);
+        return Start(Guid.NewGuid().ToString("n"), OperationType.Pack, input, args, onCompletedSuccessfully);
     }
 
-    private OperationViewModel Start(string id, OperationType type, string inputOrLink, List<string> args, Action? onCompletedSuccessfully = null)
+    private OperationViewModel Start(string id, OperationType type, string inputOrLink, List<string> args, Action<string?>? onCompletedSuccessfully = null)
     {
         var vm = new OperationViewModel(id, type, inputOrLink);
         var entry = new TaskHistoryEntry
@@ -119,7 +122,7 @@ public sealed class TaskManager
                         entry.OutputPath = evt.Path;
                         entry.FinishedAt = DateTime.UtcNow;
                         PersistHistory();
-                        onCompletedSuccessfully?.Invoke();
+                        onCompletedSuccessfully?.Invoke(evt.Path);
                     }
                     else if (evt.Kind == NdjsonEventKind.Error)
                     {
@@ -245,6 +248,21 @@ public sealed class TaskManager
         {
             await StopAsync(id, timeoutPerServe);
         }
+    }
+
+    /// <summary>Stops the operation if still running, then removes its row and history entry entirely.</summary>
+    public async Task RemoveOperationAsync(string operationId)
+    {
+        if (_entries.TryGetValue(operationId, out var entry) && entry.Status == OperationStatus.Running)
+        {
+            await StopAsync(operationId, TimeSpan.FromSeconds(5));
+        }
+        _entries.Remove(operationId);
+        _startArgsById.Remove(operationId);
+        _runners.Remove(operationId);
+        var vm = Operations.FirstOrDefault(o => o.Id == operationId);
+        if (vm is not null) Operations.Remove(vm);
+        PersistHistory();
     }
 
     /// <summary>Re-runs a previously started operation with the same arguments, as a new row.</summary>

@@ -9,5 +9,7 @@ public sealed class AppConfig
     public string TrackerUrl { get; set; } = "https://nptp.bogotec.uk";
     public bool AlwaysUseDownloadDefaults { get; set; } = false;
     public bool KeepStoreByDefault { get; set; } = true;
+    public bool AutoSeedOnDownloadComplete { get; set; } = true;
+    public bool AutoSeedAfterSharing { get; set; } = true;
     public string ThemeFamily { get; set; } = "Modern";
 }
