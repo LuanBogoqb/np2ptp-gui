@@ -37,6 +37,14 @@
         <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,10,0,4" />
         <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" Margin="0,0,0,10" />
 
+        <Label Content="Tema" />
+        <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding ThemeFamily}"
+                  HorizontalAlignment="Left" Width="220" Margin="0,0,0,2">
+            <ComboBoxItem Content="XP Luna" Tag="XpLuna" />
+            <ComboBoxItem Content="Modern (Windows 11)" Tag="Modern" />
+        </ComboBox>
+        <TextBlock Text="Reinicie o np2ptp para aplicar a troca de tema." Foreground="Gray" FontSize="11" Margin="0,0,0,10" />
+
         <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Width="80" />
     </StackPanel>
 </UserControl>

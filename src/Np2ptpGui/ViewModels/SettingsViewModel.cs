@@ -33,6 +33,9 @@ public sealed class SettingsViewModel : ViewModelBase
     private bool _keepStoreByDefault;
     public bool KeepStoreByDefault { get => _keepStoreByDefault; set => SetField(ref _keepStoreByDefault, value); }
 
+    private string _themeFamily;
+    public string ThemeFamily { get => _themeFamily; set => SetField(ref _themeFamily, value); }
+
     private string _updateStatus = "";
     public string UpdateStatus { get => _updateStatus; set => SetField(ref _updateStatus, value); }
 
@@ -54,6 +57,7 @@ public sealed class SettingsViewModel : ViewModelBase
         _trackerUrl = config.TrackerUrl;
         _alwaysUseDownloadDefaults = config.AlwaysUseDownloadDefaults;
         _keepStoreByDefault = config.KeepStoreByDefault;
+        _themeFamily = config.ThemeFamily;
 
         SaveCommand = new RelayCommand(_ =>
         {
@@ -63,6 +67,7 @@ public sealed class SettingsViewModel : ViewModelBase
             _config.TrackerUrl = TrackerUrl;
             _config.AlwaysUseDownloadDefaults = AlwaysUseDownloadDefaults;
             _config.KeepStoreByDefault = KeepStoreByDefault;
+            _config.ThemeFamily = ThemeFamily;
             _configStore.Save(_config);
         });
 
