@@ -145,10 +145,8 @@ premature.
 
 ## Error Handling
 
-- Accent-color read failure or Mica unsupported on the running Windows build: WPF-UI's own APIs
-  degrade gracefully by design (fall back to a default accent / solid background) — no extra
-  try/catch needed on top of what the library already guarantees, confirm this during
-  implementation rather than assuming.
+- Accent-color read failure: WPF-UI's own APIs degrade gracefully by design (fall back to a
+  default accent) — no extra try/catch needed on top of what the library already guarantees.
 - `ThemeFamily` value that's missing/unrecognized in `config.ini` (e.g. hand-edited or from a
   future version) → defaults to `"XpLuna"`, matching this project's existing "bad config value →
   safe default" convention (see `ConfigStore`'s existing `JsonException`/corrupt-file handling).
