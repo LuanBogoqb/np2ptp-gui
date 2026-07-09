@@ -25,7 +25,7 @@ public class ConfigStoreTests
         Assert.Equal("/ip4/0.0.0.0/udp/0/quic-v1", config.DefaultListenAddress);
         Assert.False(config.AlwaysUseDownloadDefaults);
         Assert.True(config.KeepStoreByDefault);
-        Assert.Equal("XpLuna", config.ThemeFamily);
+        Assert.Equal("Modern", config.ThemeFamily);
         Directory.Delete(dir, recursive: true);
     }
 
@@ -39,7 +39,7 @@ public class ConfigStoreTests
 
         var config = store.Load();
 
-        Assert.Equal("XpLuna", config.ThemeFamily);
+        Assert.Equal("Modern", config.ThemeFamily);
         Directory.Delete(dir, recursive: true);
     }
 

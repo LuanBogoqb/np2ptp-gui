@@ -3,50 +3,62 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Np2ptpGui.Controls">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="10">
-        <Label Content="np2ptp.exe path" />
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Content="Check for update" Command="{Binding CheckForUpdateCommand}" Margin="6,0,0,0" />
-            <TextBox Text="{Binding BinaryPath}" IsReadOnly="True" />
-        </DockPanel>
-        <TextBlock Text="{Binding UpdateStatus}" Margin="0,4,0,10" />
+    <StackPanel Margin="10,10,20,10">
 
-        <Label Content="Default download folder" />
-        <DockPanel Margin="0,0,0,10">
-            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" Margin="6,0,0,0" />
-            <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
-                     controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
-        </DockPanel>
+        <GroupBox Header="np2ptp" Padding="8" Margin="0,0,0,10">
+            <StackPanel>
+                <Label Content="np2ptp.exe path" />
+                <DockPanel MaxWidth="460" HorizontalAlignment="Left">
+                    <Button DockPanel.Dock="Right" Content="Check for update" Command="{Binding CheckForUpdateCommand}" Margin="6,0,0,0" />
+                    <TextBox Text="{Binding BinaryPath}" IsReadOnly="True" />
+                </DockPanel>
+                <TextBlock Text="{Binding UpdateStatus}" Margin="0,4,0,10" />
 
-        <Label Content="Store folder" />
-        <DockPanel Margin="0,0,0,10">
-            <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" Margin="6,0,0,0" />
-            <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
-                     controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store"
-                     MaxWidth="380" HorizontalAlignment="Left" />
-        </DockPanel>
+                <Label Content="Default listen address" />
+                <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}"
+                         controls:HintBehavior.Hint="Ex: /ip4/0.0.0.0/udp/0/quic-v1"
+                         HorizontalAlignment="Left" Width="380"
+                         Margin="0,0,0,10" />
 
-        <Label Content="Default listen address" />
-        <TextBox Text="{Binding DefaultListenAddress, UpdateSourceTrigger=PropertyChanged}"
-                 controls:HintBehavior.Hint="Ex: /ip4/0.0.0.0/udp/0/quic-v1"
-                 HorizontalAlignment="Left" Width="320"
-                 Margin="0,0,0,10" />
+                <Label Content="Tracker URL" />
+                <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}"
+                         controls:HintBehavior.Hint="Ex: https://tracker.example"
+                         HorizontalAlignment="Left" Width="380" />
+            </StackPanel>
+        </GroupBox>
 
-        <Label Content="Tracker URL" />
-        <TextBox Text="{Binding TrackerUrl, UpdateSourceTrigger=PropertyChanged}"
-                 controls:HintBehavior.Hint="Ex: https://tracker.example"
-                 Margin="0,0,0,10" />
+        <GroupBox Header="Downloads" Padding="8" Margin="0,0,0,10">
+            <StackPanel>
+                <Label Content="Default download folder" />
+                <DockPanel MaxWidth="460" HorizontalAlignment="Left" Margin="0,0,0,10">
+                    <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseDownloadFolderCommand}" Margin="6,0,0,0" />
+                    <TextBox Text="{Binding DefaultDownloadFolder, UpdateSourceTrigger=PropertyChanged}"
+                             controls:HintBehavior.Hint="Ex: C:\Users\voce\Downloads" />
+                </DockPanel>
 
-        <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,10,0,4" />
-        <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" Margin="0,0,0,10" />
+                <Label Content="Store folder" />
+                <DockPanel MaxWidth="460" HorizontalAlignment="Left" Margin="0,0,0,10">
+                    <Button DockPanel.Dock="Right" Content="Procurar..." Command="{Binding BrowseStoreFolderCommand}" Margin="6,0,0,0" />
+                    <TextBox Text="{Binding StoreFolder, UpdateSourceTrigger=PropertyChanged}"
+                             controls:HintBehavior.Hint="Ex: C:\Users\voce\np2ptp-store" />
+                </DockPanel>
 
-        <Label Content="Tema" />
-        <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding ThemeFamily}"
-                  HorizontalAlignment="Left" Width="220" Margin="0,0,0,2">
-            <ComboBoxItem Content="XP Luna" Tag="XpLuna" />
-            <ComboBoxItem Content="Modern (Windows 11)" Tag="Modern" />
-        </ComboBox>
-        <TextBlock Text="Reinicie o np2ptp para aplicar a troca de tema." Foreground="Gray" FontSize="11" Margin="0,0,0,10" />
+                <CheckBox Content="Sempre usar essas configurações ao baixar" IsChecked="{Binding AlwaysUseDownloadDefaults}" Margin="0,0,0,4" />
+                <CheckBox Content="Manter store por padrão" IsChecked="{Binding KeepStoreByDefault}" />
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Aparência" Padding="8" Margin="0,0,0,10">
+            <StackPanel>
+                <Label Content="Tema" />
+                <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding ThemeFamily}"
+                          HorizontalAlignment="Left" Width="220" Margin="0,0,0,2">
+                    <ComboBoxItem Content="XP Luna" Tag="XpLuna" />
+                    <ComboBoxItem Content="Modern (Windows 11)" Tag="Modern" />
+                </ComboBox>
+                <TextBlock Text="Reinicie o np2ptp para aplicar a troca de tema." Foreground="Gray" FontSize="11" />
+            </StackPanel>
+        </GroupBox>
 
         <Button Content="Save" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Padding="16,6" Margin="0,4,0,10" />
     </StackPanel>

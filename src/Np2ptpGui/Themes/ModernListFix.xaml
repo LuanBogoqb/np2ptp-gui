@@ -8,6 +8,37 @@
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
+    <!-- Default GroupBox template draws its frame with hardcoded SystemColors, not
+         routed through the public BorderBrush property at all (a plain Setter has no
+         effect) - reads as a harsh near-white line against the dark palette. Full
+         retemplate: flat rounded border, header caption floating over a gap in it. -->
+    <Style TargetType="{x:Type GroupBox}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type GroupBox}">
+                    <Grid>
+                        <Border BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Margin="0,10,0,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <Border Background="{DynamicResource ApplicationBackgroundBrush}"
+                                Margin="10,0,0,0"
+                                Padding="4,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top">
+                            <ContentPresenter ContentSource="Header"
+                                               TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- WPF's default GridViewColumnHeader template renders a raised/beveled
          classic-Windows "button" look regardless of Background/Foreground Setters
          (same class of built-in-trigger override XP Luna's Button/CheckBox needed
