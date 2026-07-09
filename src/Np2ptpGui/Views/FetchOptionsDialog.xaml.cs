@@ -1,7 +1,6 @@
 namespace Np2ptpGui.Views;
 
 using System.Windows;
-using Np2ptpGui.Themes;
 
 public partial class FetchOptionsDialog : Window
 {
@@ -12,7 +11,6 @@ public partial class FetchOptionsDialog : Window
     public FetchOptionsDialog(string defaultReconstructFolder, string defaultStoreFolder, bool defaultKeepStore)
     {
         InitializeComponent();
-        ThemeManager.Register(this);
         ReconstructFolderBox.Text = defaultReconstructFolder;
         StoreFolderBox.Text = defaultStoreFolder;
         KeepStoreCheckBox.IsChecked = defaultKeepStore;

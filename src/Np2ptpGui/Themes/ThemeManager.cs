@@ -1,8 +1,6 @@
 namespace Np2ptpGui.Themes;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 
 public static class ThemeManager
@@ -11,28 +9,24 @@ public static class ThemeManager
     private static readonly Uri LightColorsUri = new("/Np2ptpGui;component/Themes/XpColors.Light.xaml", UriKind.Relative);
     private static readonly Uri DarkColorsUri = new("/Np2ptpGui;component/Themes/XpColors.Dark.xaml", UriKind.Relative);
 
-    private static readonly List<FrameworkElement> Roots = new();
-    private static bool _isLight = true;
+    // Merged into Application.Current.Resources (via code, not App.xaml markup) so that:
+    // (a) every window/control in the app resolves these DynamicResource keys through the
+    //     standard resource-lookup fallback to Application.Resources, with no per-window wiring;
+    // (b) swapping the colors dictionary here actually re-renders already-applied
+    //     ControlTemplate Setters using DynamicResource - a per-Window MergedDictionaries swap
+    //     does not reliably trigger that re-evaluation, confirmed by direct testing.
+    public static void Initialize(bool isLight)
+    {
+        var merged = Application.Current.Resources.MergedDictionaries;
+        merged.Add(new ResourceDictionary { Source = StylesUri });
+        merged.Add(new ResourceDictionary { Source = isLight ? LightColorsUri : DarkColorsUri });
+    }
 
     public static void ApplyTheme(bool isLight)
     {
-        _isLight = isLight;
         var colorsUri = isLight ? LightColorsUri : DarkColorsUri;
-        foreach (var root in Roots.ToList())
-        {
-            root.Resources.MergedDictionaries[1] = new ResourceDictionary { Source = colorsUri };
-        }
-    }
-
-    public static void Register(FrameworkElement root)
-    {
-        root.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = StylesUri });
-        root.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = _isLight ? LightColorsUri : DarkColorsUri });
-        Roots.Add(root);
-
-        if (root is Window window)
-        {
-            window.Closed += (_, _) => Roots.Remove(root);
-        }
+        var merged = Application.Current.Resources.MergedDictionaries;
+        merged.RemoveAt(1);
+        merged.Insert(1, new ResourceDictionary { Source = colorsUri });
     }
 }

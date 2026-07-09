@@ -67,7 +67,7 @@ public partial class App : System.Windows.Application
             var settingsViewModel = new SettingsViewModel(configStore, binaryManager, config);
 
             var themeService = new WindowsThemeService();
-            Np2ptpGui.Themes.ThemeManager.ApplyTheme(themeService.IsLightTheme());
+            Np2ptpGui.Themes.ThemeManager.Initialize(themeService.IsLightTheme());
             themeService.ThemeChanged += isLight => Np2ptpGui.Themes.ThemeManager.ApplyTheme(isLight);
 
             var mainWindow = new MainWindow { DataContext = mainViewModel };
