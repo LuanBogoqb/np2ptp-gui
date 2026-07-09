@@ -39,6 +39,9 @@ public sealed class SettingsViewModel : ViewModelBase
     private string _updateStatus = "";
     public string UpdateStatus { get => _updateStatus; set => SetField(ref _updateStatus, value); }
 
+    private bool _isCheckingForUpdate;
+    public bool IsCheckingForUpdate { get => _isCheckingForUpdate; set => SetField(ref _isCheckingForUpdate, value); }
+
     public RelayCommand SaveCommand { get; }
     public RelayCommand CheckForUpdateCommand { get; }
     public RelayCommand BrowseDownloadFolderCommand { get; }
@@ -74,6 +77,7 @@ public sealed class SettingsViewModel : ViewModelBase
         CheckForUpdateCommand = new RelayCommand(async _ =>
         {
             UpdateStatus = "checking...";
+            IsCheckingForUpdate = true;
             try
             {
                 var updated = await _binaryManager.CheckForUpdateAsync(CancellationToken.None);
@@ -82,6 +86,10 @@ public sealed class SettingsViewModel : ViewModelBase
             catch (Exception ex)
             {
                 UpdateStatus = $"check failed: {ex.Message}";
+            }
+            finally
+            {
+                IsCheckingForUpdate = false;
             }
         });
 

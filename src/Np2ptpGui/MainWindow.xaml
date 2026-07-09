@@ -5,7 +5,7 @@
         Title="np2ptp" Height="600" Width="900"
         Icon="app.ico"
         Style="{DynamicResource {x:Type Window}}">
-    <TabControl>
+    <TabControl x:Name="MainTabControl" SelectionChanged="MainTabControl_SelectionChanged">
         <TabItem Header="Downloads">
             <views:DownloadsView />
         </TabItem>

@@ -50,15 +50,33 @@
                                 VerticalAlignment="Center">
                             <Border x:Name="Knob" Width="14" Height="14" CornerRadius="7"
                                     Background="White"
-                                    HorizontalAlignment="Left" Margin="3,0,0,0" />
+                                    HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="KnobTransform" X="0" />
+                                </Border.RenderTransform>
+                            </Border>
                         </Border>
                         <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
-                            <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
-                            <Setter TargetName="Knob" Property="Margin" Value="0,0,3,0" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="KnobTransform" Storyboard.TargetProperty="X"
+                                                         To="20" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="KnobTransform" Storyboard.TargetProperty="X"
+                                                         To="0" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
