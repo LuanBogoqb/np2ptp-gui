@@ -53,7 +53,7 @@ for light/dark, and `ApplicationAccentColorManager` for reading the Windows acce
   then).
 - "Modern" theme family with Light + Dark variants, auto-following the Windows theme setting via
   the existing `WindowsThemeService`, exactly like XP Luna's light/dark already does.
-- Windows accent color (via `ApplicationAccentColorManager.ApplyWindowsAccentColor()`) drives
+- Windows accent color (via `ApplicationAccentColorManager.ApplySystemAccent()`) drives
   Modern's accent/highlight color — not a fixed blue.
 - A theme-family selector in Settings (XP Luna / Modern), persisted to `config.ini` via a new
   `AppConfig.ThemeFamily` field (default `"XpLuna"`, so existing installs/behavior don't change
@@ -71,39 +71,60 @@ for light/dark, and `ApplicationAccentColorManager` for reading the Windows acce
 
 ## Architecture
 
-`MainWindow` and `FetchOptionsDialog` stay plain `Window` for both families — no base class change,
-no per-window setup at all. Modern is implemented purely via `Application`-level resource merging,
-the same mechanism XP Luna already uses (`Np2ptpGui.Themes.ThemeManager` merging
-`XpControlStyles.xaml`/`XpColors.*.xaml` into `Application.Current.Resources.MergedDictionaries`) —
-except for Modern, the dictionaries being merged are WPF-UI's own, via its `ApplicationThemeManager`
-API rather than a hand-written `ResourceDictionary`. Since implicit (TargetType-keyed) styles resolve
-through the standard resource-lookup chain regardless of which `Window` subclass hosts them, this
-gives Fluent-styled `Button`/`TextBox`/`ListView`/etc. on an ordinary native-chrome `Window`, with no
-compiled-base-class conflict between the two families to resolve.
+> **Amendment 2 (2026-07-09, final review):** the text below described the implementation as
+> needing "no per-window setup at all" — that turned out to be wrong on two counts, both fixed
+> during implementation: (1) `ApplicationThemeManager.Apply` alone never populates the
+> `ApplicationBackgroundBrush`/`TextFillColorPrimaryBrush` resource keys without also merging
+> `Wpf.Ui.Markup.ControlsDictionary` + `Wpf.Ui.Markup.ThemesDictionary` directly; (2) a plain
+> `Window` has no implicit style of its own, so those two brush keys still need to be applied to
+> each `Window` instance explicitly (`ModernThemeManager.ApplyToWindow`, called for both
+> `MainWindow` and `FetchOptionsDialog`) — WPF-UI's implicit styles cover `Button`/`TextBox`/
+> `CheckBox`/`ListView`-hosting *controls* automatically, but not the `Window` chrome itself, and
+> not `ListView`/`GridViewColumnHeader`'s content-area Background either (a small hand-written
+> `ModernListFix.xaml`, mirroring XP Luna's own fix for the identical gap, was needed). The
+> "no `FluentWindow`/no base-class-change" part of the original decision still holds — only the
+> "zero window-level code" claim was wrong. See below for what's actually implemented.
+
+`MainWindow` and `FetchOptionsDialog` stay plain `Window` for both families — no base class change.
+Modern is implemented via `Application`-level resource merging, the same mechanism XP Luna already
+uses (`Np2ptpGui.Themes.ThemeManager` merging `XpControlStyles.xaml`/`XpColors.*.xaml` into
+`Application.Current.Resources.MergedDictionaries`) — except for Modern, the dictionaries merged
+are `Wpf.Ui.Markup.ControlsDictionary` (Fluent control templates) and `Wpf.Ui.Markup.ThemesDictionary`
+(the light/dark color tokens), plus a small `ModernListFix.xaml` for the one real coverage gap
+(below). Since implicit (TargetType-keyed) styles resolve through the standard resource-lookup
+chain regardless of which `Window` subclass hosts them, this gives Fluent-styled `Button`/`TextBox`/
+`ListView`/etc. on an ordinary native-chrome `Window`, with no compiled-base-class conflict between
+the two families to resolve.
 
 **Startup flow (`App.xaml.cs`):**
 1. Read `AppConfig.ThemeFamily`.
 2. If `"XpLuna"`: unchanged existing flow — `WindowsThemeService` + `Np2ptpGui.Themes.ThemeManager`
    as shipped today.
 3. If `"Modern"`: construct `WindowsThemeService` (reused, not duplicated), call
-   `ApplicationThemeManager.Apply(isLight ? ApplicationTheme.Light : ApplicationTheme.Dark)` and
-   `ApplicationAccentColorManager.ApplyWindowsAccentColor()`. No window-level setup — `MainWindow`/
-   `FetchOptionsDialog` need no changes at all for either family.
+   `ModernThemeManager.Initialize(isLight)` — merges `ControlsDictionary` + `ThemesDictionary` +
+   `ModernListFix.xaml` and calls `ApplicationAccentColorManager.ApplySystemAccent()` (the brief's
+   guessed `ApplyWindowsAccentColor()` doesn't exist in the installed WPF-UI 4.3.0). Then, once
+   each `Window` is constructed, `ModernThemeManager.ApplyToWindow(window)` sets that window's own
+   Background/Foreground via `SetResourceReference` against the same two brush keys — called for
+   `MainWindow` in `App.xaml.cs` and for `FetchOptionsDialog` where `MainViewModel` constructs it.
 4. Live light/dark switching reuses the existing `WindowsThemeService.ThemeChanged` event in both
-   cases — only the handler differs (XP's `ThemeManager.ApplyTheme` vs WPF-UI's
-   `ApplicationThemeManager.Apply`). Switching the *family* itself is restart-only (Scope, above).
+   cases. Modern's handler (`ModernThemeManager.ApplyTheme`) removes and re-inserts a fresh
+   `ThemesDictionary` instance rather than trusting `ApplicationThemeManager.Apply` to mutate the
+   existing one in place — the same in-place-mutation unreliability the sibling XP `ThemeManager`
+   already worked around, confirmed to apply here too. Switching the *family* itself is restart-only
+   (Scope, above).
 
-**Settings:** a `ComboBox` (or two `RadioButton`s) bound to a new `SettingsViewModel.ThemeFamily`
-property, saved via the existing `SaveCommand`/`ConfigStore` path. Changing it while running shows
-an inline notice that the change applies after restart — no attempt to hot-swap families.
+**Settings:** a `ComboBox` bound to a new `SettingsViewModel.ThemeFamily` property, saved via the
+existing `SaveCommand`/`ConfigStore` path, with an inline "restart required" notice.
 
-**Control coverage:** WPF-UI ships its own implicit styles for the standard controls this app
-already uses (`Button`, `TextBox`, `CheckBox`, `ListView`, `GridViewColumnHeader`, `TabControl`/
-`TabItem`), merged in via its own resource setup once `ApplicationThemeManager.Apply` runs — so
-Modern should not need the same manual per-control-type styling pass XP Luna required (and where a
-real coverage gap was found and fixed post-launch: ListView/GridViewColumnHeader/TabItem/Label).
-Verify this claim empirically during implementation rather than assuming it holds for every
-control this app happens to use.
+**Control coverage:** WPF-UI's `ControlsDictionary` covers `Button`/`TextBox`/`CheckBox`/`ComboBox`/
+`TabControl`/`TabItem`/`Label` automatically. It does **not** cover `ListView`/`GridViewColumnHeader`'s
+content-area Background (same class of gap XP Luna had for these exact two types) — fixed via
+`ModernListFix.xaml`, a 2-style hand-written dictionary referencing the same `ApplicationBackgroundBrush`/
+`TextFillColorPrimaryBrush` keys `ApplyToWindow` uses. An earlier attempt at this identical fix failed
+and was reverted mid-implementation; it turned out to predate the `ControlsDictionary`/`ThemesDictionary`
+merge fix, so the brush keys genuinely didn't resolve yet at that point — not a dead end, just
+premature.
 
 ## Data Flow
 
