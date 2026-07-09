@@ -30,7 +30,20 @@ jobs:
         run: dotnet restore Np2ptpGui.sln
 
       - name: Test
-        run: dotnet test Np2ptpGui.sln -c Release --no-restore
+        shell: pwsh
+        run: |
+          # ProcessRunnerTests' Ctrl+C test is a documented pre-existing timing
+          # flake (see docs/LESSONS-LEARNED.md); a TaskManagerTests store-
+          # cleanup test has shown the same one-off timing flakiness locally.
+          # Both always pass on retry and aren't caused by whatever this run
+          # is actually building. One retry here matches that established
+          # local practice instead of failing the whole release on a flake.
+          dotnet test Np2ptpGui.sln -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "First test run failed, retrying once..."
+            dotnet test Np2ptpGui.sln -c Release --no-restore
+          }
+          exit $LASTEXITCODE
 
       - name: Publish
         run: >
@@ -67,5 +80,12 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          # A manual dispatch can label the build under any tag_name, which
+          # decouples what's signed from what a real "vX.X.X" tag push always
+          # guarantees (the artifact matches that exact tagged commit). Publish
+          # those as drafts - invisible to normal users until a human explicitly
+          # reviews and hits "Publish release" on GitHub. Real tag pushes still
+          # auto-publish, since there's no such mismatch possible there.
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
           files: np2ptp-gui-win-x64.zip
           generate_release_notes: true
