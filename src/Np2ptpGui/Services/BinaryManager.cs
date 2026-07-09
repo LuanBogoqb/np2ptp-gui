@@ -21,9 +21,10 @@ public sealed class BinaryManager
     private readonly string _binsDirectory;
     private readonly Func<string, string?> _productVersionReader;
     private readonly Func<string, string?> _signatureVerifier;
+    private readonly bool _skipSignatureVerification;
 
-    public BinaryManager(GitHubReleaseClient client, string binsDirectory)
-        : this(client, binsDirectory, ReadProductVersion, AuthenticodeVerifier.GetVerifiedSignerThumbprint)
+    public BinaryManager(GitHubReleaseClient client, string binsDirectory, bool skipSignatureVerification = false)
+        : this(client, binsDirectory, ReadProductVersion, AuthenticodeVerifier.GetVerifiedSignerThumbprint, skipSignatureVerification)
     {
     }
 
@@ -31,12 +32,14 @@ public sealed class BinaryManager
         GitHubReleaseClient client,
         string binsDirectory,
         Func<string, string?> productVersionReader,
-        Func<string, string?> signatureVerifier)
+        Func<string, string?> signatureVerifier,
+        bool skipSignatureVerification = false)
     {
         _client = client;
         _binsDirectory = binsDirectory;
         _productVersionReader = productVersionReader;
         _signatureVerifier = signatureVerifier;
+        _skipSignatureVerification = skipSignatureVerification;
         Directory.CreateDirectory(_binsDirectory);
     }
 
@@ -83,6 +86,8 @@ public sealed class BinaryManager
         var bytes = await _client.DownloadAssetAsync(asset.BrowserDownloadUrl, ct);
         await File.WriteAllBytesAsync(ExePath, bytes, ct);
 
+        if (_skipSignatureVerification) return;
+
         var signerThumbprint = _signatureVerifier(ExePath);
         if (!string.Equals(signerThumbprint, ExpectedSignerThumbprint, StringComparison.OrdinalIgnoreCase))
         {
@@ -90,7 +95,8 @@ public sealed class BinaryManager
             throw new InvalidOperationException(
                 $"release {release.TagName}'s {AssetName} is not signed by the expected certificate " +
                 $"(thumbprint {ExpectedSignerThumbprint}) - refusing to keep it. The release may have " +
-                "been tampered with, or the signing certificate changed unexpectedly.");
+                "been tampered with, or the signing certificate changed unexpectedly. Pass --no-check-cert " +
+                "to temporarily skip this check.");
         }
     }
 

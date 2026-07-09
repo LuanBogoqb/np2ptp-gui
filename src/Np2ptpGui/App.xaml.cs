@@ -24,9 +24,18 @@ public partial class App : System.Windows.Application
         var historyStore = new HistoryStore(appDataDir);
         var config = configStore.Load();
 
+        var skipCertCheck = Array.Exists(e.Args, a => a.Equals("--no-check-cert", StringComparison.OrdinalIgnoreCase));
+        if (skipCertCheck)
+        {
+            System.Windows.MessageBox.Show(
+                "Rodando com --no-check-cert: a verificação de assinatura do np2ptp.exe está DESATIVADA.\n" +
+                "Não use isso fora de testes locais.",
+                "np2ptp-gui", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
         var httpClient = new HttpClient();
         var releaseClient = new GitHubReleaseClient(httpClient);
-        var binaryManager = new BinaryManager(releaseClient, binsDir);
+        var binaryManager = new BinaryManager(releaseClient, binsDir, skipCertCheck);
 
         try
         {

@@ -172,6 +172,24 @@ public class BinaryManagerTests
     }
 
     [Fact]
+    public async Task CheckForUpdateAsync_WhenSkipSignatureVerificationIsTrue_KeepsBinaryEvenIfUnsigned()
+    {
+        // --no-check-cert escape hatch for the transitional period before
+        // np2ptp's own release pipeline actually signs with the expected cert.
+        var dir = NewTempDir();
+        Directory.CreateDirectory(dir);
+        await File.WriteAllBytesAsync(Path.Combine(dir, "np2ptp.exe"), new byte[] { 1 });
+        var client = new GitHubReleaseClient(ClientReturning(ReleaseJsonV2, new byte[] { 6, 6, 6 }));
+        var manager = new BinaryManager(client, dir, _ => "1.0.0", _ => null, skipSignatureVerification: true);
+
+        var updated = await manager.CheckForUpdateAsync(default);
+
+        Assert.True(updated);
+        Assert.Equal(new byte[] { 6, 6, 6 }, await File.ReadAllBytesAsync(manager.ExePath));
+        Directory.Delete(dir, recursive: true);
+    }
+
+    [Fact]
     public async Task CheckForUpdateAsync_WhenDownloadedBinaryIsUnsigned_DeletesFileAndThrows()
     {
         var dir = NewTempDir();
