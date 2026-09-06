@@ -96,6 +96,14 @@ natureza.
 Essas coisas estavam no design original mas foram deliberadamente cortadas do escopo pra sair
 mais rápido — não é esquecimento, é decisão consciente registrada aqui pra não se perder:
 
+> **Nota de 2026-09-06 (conferido no código, não na lembrança):** este doc é de 2026-07-08 e dois
+> itens da lista abaixo **saíram da lista no dia seguinte**, então a lista já não descreve o app:
+> o botão "copiar link" existe desde `67d38ba` (`ViewModels/MainViewModel.cs`, `Views/ShareView.xaml`),
+> junto com delete, stop/retry e os toggles de auto-seed; e "sem verificação de checksum do binário
+> baixado" virou verificação de assinatura Authenticode com thumbprint pinado em
+> `Services/BinaryManager.cs:18` (`5b76f43`/`697fcb2`). O resto da lista continua valendo. A lista
+> fica como está — é registro do que foi decidido em julho, não estado atual.
+
 - Botão "copiar link" no resultado de um pack.
 - Atalho "Seed agora" (a partir de um resultado de pack, ir direto pro Serve).
 - Botão "Abrir pasta" (abrir a pasta de saída no Explorer).
