@@ -119,5 +119,5 @@ XP Luna and Modern (WPF-UI/Fluent) theme dictionaries and managers; `Models/` fo
 (`AppConfig`, `TaskHistoryEntry`, `NdjsonEvent`). `tests/Np2ptpGui.Tests/` mirrors that
 structure; `tests/helpers/` holds two standalone helper executables used only by tests (a
 Ctrl+C signal target, a fake np2ptp CLI). The sibling protocol repo is
-`E:\Repos\np2ptp-project\np2ptp` (Rust, its own `CLAUDE.md`); this repo only consumes its
+`D:\Repos\np2ptp-project\np2ptp` (Rust, its own `CLAUDE.md`); this repo only consumes its
 released binary, it does not build or vendor its source.

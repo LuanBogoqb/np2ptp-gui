@@ -6,11 +6,14 @@ pra próximos projetos WPF/.NET nessa máquina.
 
 ## Ambiente
 
-- **`dotnet` nunca tá no PATH** nessa sessão de terminal (Bash nem PowerShell), mesmo depois
-  de instalar o SDK via winget. Sempre chama pelo caminho completo:
-  `"C:\Program Files\dotnet\dotnet.exe"` (PowerShell) ou `"/c/Program Files/dotnet/dotnet.exe"`
-  (Bash). Se um dia isso for corrigido (PATH atualizado), essa nota fica obsoleta — mas até lá,
-  não perde tempo tentando `dotnet build` pelado.
+- **`dotnet` está no PATH de novo (desde a reinstalação de 2026-10-05)** — SDK 10.0.401 em
+  `C:\Program Files\dotnet`, visível no Bash e no PowerShell. Histórico (nota original, agora
+  obsoleta como ela mesma previa): o SDK instalado via winget não entrava no PATH, e era
+  preciso chamar pelo caminho completo: `"C:\Program Files\dotnet\dotnet.exe"` (PowerShell) ou
+  `"/c/Program Files/dotnet/dotnet.exe"` (Bash). Guarda o caminho completo como fallback se
+  isso voltar a acontecer. Detalhe pós-reinstalação: o SDK instalado é o 10, o projeto mira
+  `net8.0-windows` — se um build reclamar de targeting pack, confere antes de assumir que é
+  bug do código.
 
 - **PowerShell 5.1 + `2>&1` em comando nativo = falso alarme.** Redirecionar stderr de um `.exe`
   nativo dentro do PowerShell 5.1 embrulha cada linha como `NativeCommandError` e derruba `$?`
