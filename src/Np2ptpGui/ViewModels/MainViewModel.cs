@@ -2,6 +2,7 @@ namespace Np2ptpGui.ViewModels;
 
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
@@ -78,12 +79,19 @@ public sealed class MainViewModel : ViewModelBase
                 keepStore = dialog.KeepStore;
             }
 
-            _taskManager.StartFetch(DownloadLinkInput, reconstructFolder, storeFolder, keepStore, useFec: false,
-                onCompletedSuccessfully: path =>
+            var link = DownloadLinkInput; // capture now - DownloadLinkInput is cleared below, before the download finishes
+            _taskManager.StartFetch(link, reconstructFolder, storeFolder, keepStore, useFec: false,
+                onCompletedSuccessfully: _ =>
                 {
-                    if (_config.AutoSeedOnDownloadComplete && !string.IsNullOrWhiteSpace(path))
+                    // `serve` requires an actual .nptp manifest file - the downloaded
+                    // content itself (evt.Path) doesn't qualify, and neither does a
+                    // bare `np2ptp:ROOT` link (there's no local manifest for those).
+                    // Auto-seeding is only possible when the user fetched via a local
+                    // .nptp file path to begin with, since that file already IS a
+                    // valid manifest `serve` can reuse as-is.
+                    if (_config.AutoSeedOnDownloadComplete && link.EndsWith(".nptp", StringComparison.OrdinalIgnoreCase) && File.Exists(link))
                     {
-                        _taskManager.StartServe(path, _config.StoreFolder, _config.DefaultListenAddress, _config.TrackerUrl);
+                        _taskManager.StartServe(link, _config.StoreFolder, _config.DefaultListenAddress, _config.TrackerUrl);
                     }
                 });
             DownloadLinkInput = "";

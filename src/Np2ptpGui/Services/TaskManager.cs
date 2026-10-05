@@ -64,10 +64,18 @@ public sealed class TaskManager
 
     public OperationViewModel StartPack(string input, string? outputFile, string storeFolder, bool noCopy, Action<string?>? onCompletedSuccessfully = null)
     {
-        var args = new List<string> { "pack", input, "--store", storeFolder, "--json" };
-        if (outputFile is not null) { args.Add("--out"); args.Add(outputFile); }
+        var id = Guid.NewGuid().ToString("n");
+        // `serve` requires an actual .nptp manifest file (it rejects anything
+        // else with "not an nptp file (bad magic header)") - not the original
+        // input, and not evt.Path (pack's "result" event carries no "path" at
+        // all, only "root", the shareable link). Always resolve a concrete
+        // --out path, even when the caller doesn't supply one, so there's a
+        // real manifest file on disk to hand to StartServe for auto-seeding.
+        var resolvedOutputFile = outputFile ?? Path.Combine(storeFolder, id + ".nptp");
+        var args = new List<string> { "pack", input, "--out", resolvedOutputFile, "--store", storeFolder, "--json" };
         if (noCopy) args.Add("--no-copy");
-        return Start(Guid.NewGuid().ToString("n"), OperationType.Pack, input, args, onCompletedSuccessfully);
+        return Start(id, OperationType.Pack, input, args,
+            onCompletedSuccessfully is null ? null : (Action<string?>)(_ => onCompletedSuccessfully(resolvedOutputFile)));
     }
 
     private OperationViewModel Start(string id, OperationType type, string inputOrLink, List<string> args, Action<string?>? onCompletedSuccessfully = null)
